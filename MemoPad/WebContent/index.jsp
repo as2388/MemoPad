@@ -12,9 +12,16 @@
 			document.getElementById("txtInput").value = "";
 			document.getElementById("txtInput").focus();
 			
-			
-			//TODO: Remove this
-			document.getElementById("output").innerHTML = MemoService.getMemos({user: "testuser"}); 
+			//TODO: Remove this (currently returns item just added to the database)
+			var servletresponse = MemoService.getMemos({user: "testuser"});
+			var parsedresponse = JSON.parse(servletresponse);
+			var output="";
+			for (var i = 0; i < parsedresponse.length; i++)
+			{
+				output+=" --- " + parsedresponse[i].Value;
+			}
+			document.getElementById("output").innerHTML = output //parsedresponse[0].Value;
+			//document.getElementById("output").innerHTML = servletresponse;
 		}
 		function clearTxtInputDefault()
 		{	//clear "New Memo..." message

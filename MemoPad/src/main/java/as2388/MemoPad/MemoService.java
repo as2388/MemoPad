@@ -2,6 +2,7 @@ package as2388.MemoPad;
 
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.List;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -11,6 +12,7 @@ import javax.ws.rs.core.Response;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 
@@ -22,8 +24,7 @@ public class MemoService
 	@POST
 	@Path("/addMemo")
 	public void addMemo(@QueryParam("user") String user, @QueryParam("value") String value)
-	{
-		//TODO: Add the memo to the user's database collection
+	{ // Adds the memo to the user's database collection
 		
 		//get the user's collection from the database
 		DBCollection userMemos = db.getCollection(user);
@@ -41,13 +42,16 @@ public class MemoService
 	@POST
 	@Path("/getMemos")
 	public Response getMemos(@QueryParam("user") String user)
-	{
+	{ //returns all the items in the user's collection in JSON format
 		//get the user's collection from the database
 		DBCollection userMemos = db.getCollection(user);
 			
-		DBObject memo = userMemos.findOne();s
-		
-		return Response.ok().entity(memo.toString()).build();
+		//create a list containing all the documents in the user's collection
+		DBCursor myCursor = userMemos.find();
+		List<DBObject> docArr = myCursor.toArray();
+			
+		//return this list in JSON format
+		return Response.ok().entity(docArr.toString()).build();
 	}
 	
 	
