@@ -1,0 +1,55 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>as2388</groupId>
+  <artifactId>MemoPad</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>MemoPad</name>
+  <description>	</description>
+  <packaging>war</packaging>
+  
+  	<properties>
+		<resteasy.version>2.3.6.Final</resteasy.version>
+	</properties>
+  
+  	<repositories>
+		<repository>
+			<id>JBoss repository</id>
+			<url>https://repository.jboss.org/nexus/content/groups/public-jboss/</url>
+		</repository>
+	</repositories>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-jaxrs</artifactId>
+			<version>${resteasy.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-jaxb-provider</artifactId>
+			<version>${resteasy.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-jettison-provider</artifactId>
+			<version>${resteasy.version}</version>
+		</dependency>
+		<dependency>
+   			<groupId>org.jboss.resteasy</groupId>
+    		<artifactId>resteasy-jsapi</artifactId>
+    		<version>2.3.1.GA</version>
+		</dependency>
+			<dependency>
+		<groupId>net.sf.scannotation</groupId>
+		<artifactId>scannotation</artifactId>
+		<version>1.0.2</version>
+	</dependency>
+		
+		<dependency>
+  			<groupId>javax.servlet</groupId>
+  			<artifactId>javax.servlet-api</artifactId>
+  			<version>3.1.0</version>
+  			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+</project>
