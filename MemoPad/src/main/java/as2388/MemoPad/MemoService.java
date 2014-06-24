@@ -9,8 +9,8 @@ import javax.ws.rs.core.Response;
 public class MemoService 
 {
 	@POST
-	public Response spitBack(@QueryParam("d") String data)
+	public void addMemo(@QueryParam("memo") String memo)
 	{
-		return Response.ok().entity(data).build();
+		//TODO: Add the memo to the database
 	}
 }

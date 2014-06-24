@@ -5,18 +5,47 @@
 <head>
 	<script lang="javascript" src="./js"></script>
 	<script>
-		function printInput() 
+		function addMemo() 
 		{
-			var message = MemoService.spitBack({d: document.getElementById("txtInput").value});
-    		document.getElementById("output").innerHTML = message;
+			MemoService.addMemo({memo: document.getElementById("txtInput").value});	//register the new memo with the server
+			//clear the input
+			document.getElementById("txtInput").value = "";
+			document.getElementById("txtInput").focus();
+		}
+		function clearTxtInputDefault()
+		{	//clear "New Memo..." message
+			if (document.getElementById("txtInput").value == "New Memo...")
+			{
+				document.getElementById("txtInput").style.color = "black";
+				document.getElementById("txtInput").value = "";
+			}
+		}
+		function txtInputBlurred()
+		{
+			if (document.getElementById("txtInput").value == "")
+			{
+				setTxtInputDefault();	
+			}
+		}
+		function txtInputKeyPress(e)
+		{
+			if (e.keyCode == 13)
+			{
+				addMemo();
+			}
+		}
+		function setTxtInputDefault()
+		{
+			document.getElementById("txtInput").style.color = "silver";
+			document.getElementById("txtInput").value = "New Memo...";
 		}
 	</script>
 </head>
 
 <body>
-	<p>Enter Text:</p>
-	<input type="text" id="txtInput"/>
-	<button type="button" onclick="printInput()">Try it</button>
+	<p>Memos</p>
+	<input style="color: silver" type="text" id="txtInput" value="New Memo..." onfocus="clearTxtInputDefault()" onblur="txtInputBlurred()" onkeypress="txtInputKeyPress(event)"/>
+	<button type="button" onclick="addMemo()">Add</button>
 	<p id="output" />
 </body>
 </html> 
