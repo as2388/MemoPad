@@ -39,11 +39,11 @@
     		<artifactId>resteasy-jsapi</artifactId>
     		<version>2.3.1.GA</version>
 		</dependency>
-			<dependency>
-		<groupId>net.sf.scannotation</groupId>
-		<artifactId>scannotation</artifactId>
-		<version>1.0.2</version>
-	</dependency>
+		<dependency>
+			<groupId>net.sf.scannotation</groupId>
+			<artifactId>scannotation</artifactId>
+			<version>1.0.2</version>
+		</dependency>
 		
 		<dependency>
   			<groupId>javax.servlet</groupId>
@@ -51,5 +51,12 @@
   			<version>3.1.0</version>
   			<scope>provided</scope>
 		</dependency>
+		
+		<!-- Dependency for MongoDB -->
+		<dependency>
+			<groupId>org.mongodb</groupId>
+			<artifactId>mongo-java-driver</artifactId>
+		<version>2.10.1</version>
+	</dependency>
 	</dependencies>
 </project>

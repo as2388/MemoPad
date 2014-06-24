@@ -7,10 +7,14 @@
 	<script>
 		function addMemo() 
 		{
-			MemoService.addMemo({memo: document.getElementById("txtInput").value});	//register the new memo with the server
+			MemoService.addMemo({user: "testuser", value: document.getElementById("txtInput").value});	//register the new memo with the server
 			//clear the input
 			document.getElementById("txtInput").value = "";
 			document.getElementById("txtInput").focus();
+			
+			
+			//TODO: Remove this
+			document.getElementById("output").innerHTML = MemoService.getMemos({user: "testuser"}); 
 		}
 		function clearTxtInputDefault()
 		{	//clear "New Memo..." message
