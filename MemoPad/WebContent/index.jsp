@@ -61,16 +61,14 @@
 				xhr.addEventListener('load', function()
 						{
 							console.log(xhr.status);
+							if (xhr.status != 200)
+							{ //we have an error. 
+								alert('sync failed');
+							}
 							getMemos();
 						}, false);
 				
 				xhr.send();
-				
-				
-				if (xhr.status != 200)
-				{ //we had some sort of error so report this to user. 
-					
-				}
 				
 				//clear the input
 				$("#txtInput").val("");
