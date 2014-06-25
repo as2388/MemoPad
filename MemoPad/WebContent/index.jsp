@@ -26,7 +26,7 @@
 		function scrollToBottom()
 		{ //animate scroll to bottom of page
 			$('html, body').animate({ 
-				   scrollTop: $(document).height()-$(window).height()}, 
+				   scrollTop: $(document).height()-$(window).height()+30}, 
 				   500, 
 				   "swing"
 				);
@@ -86,18 +86,27 @@
 </head>
 
 <body onload="pageLoad()">
-	<h2>Memos</h2>
+	<div  style="opacity:0.95; position:fixed; top:0; left:0; width:100%; background-color:paleturquoise;"><h2 style="font-family:Arial; padding-left:5px;">Memos</h2></div>
 	
+	<div style="height:70px"></div> <!-- create space below title bar -->
 	<div id="memoDiv"></div> <!-- on screen space for the memo objects -->
 	
-	<div style="position:fixed; width:100%; height:50px; background-color:white; padding:5px; bottom:0px; ">	
+	<div style="position:fixed; width:100%; height:30px; opacity:0.95; background-color:white; padding:5px; bottom:0px; ">	
 		<input  style="color: silver;" type="text" id="txtInput" value="New Memo..." onfocus="clearTxtInputDefault()" onblur="txtInputBlurred()" onkeypress="txtInputKeyPress(event)"/>
-		<!-- <div style="width:24%;float:right; min-width:300px;"  >
-			<button href="#"  style="width:100%;" type="button" onclick="addMemo()">Add</button>
-		</div>-->
 		<button style="width:50px; margin-left:0.1cm" type="button" onclick="addMemo()">Add</button>
 	</div>
 	
+	<div style="height:30px"></div> <!-- create space above New Memo Bar -->
+	
+	
 	<div id="output"></div>
+	
+	
 </body>
 </html> 
+
+
+
+
+
+
