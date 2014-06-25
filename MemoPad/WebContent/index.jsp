@@ -55,12 +55,17 @@
 			if (!($('#txtInput').val() == "New Memo...")) //  && !($("#txtInput").attr("value")))
 			{		
 				//tell the servlet to add the memo
-				//MemoService.addMemo({user: "testuser", value: document.getElementById("txtInput").value});
-				
 				var xhr = new XMLHttpRequest();
-				xhr.open("POST", "http://localhost:8080/MemoPad/memo/addMemo?user=testuser&value=" + document.getElementById("txtInput").value, false);
+				xhr.open("POST", "http://localhost:8080/MemoPad/memo/addMemo?user=testuser&value=" + document.getElementById("txtInput").value, true);
+				
+				xhr.addEventListener('load', function()
+						{
+							console.log(xhr.status);
+							getMemos();
+						}, false);
+				
 				xhr.send();
-				console.log(xhr.status);
+				
 				
 				if (xhr.status != 200)
 				{ //we had some sort of error so report this to user. 
@@ -71,11 +76,11 @@
 				$("#txtInput").val("");
 				$("#txtInput").focus();
 				
-				scrollToBottom();
+				//scrollToBottom();
 			}
 			
 			//TODO: delete this when memos are added locally
-			getMemos();
+			
 		}
 		function scrollToBottom()
 		{ //animate auto scroll to bottom of page
@@ -111,7 +116,9 @@
 			for (var i = 0; i < UIMemos.length; i++)
 			{
 				$("#memoDiv").append(UIMemos[i].generateHTML());
-			}			
+			}	
+			
+			scrollToBottom();
 		}
 		function txtInputBlurred()
 		{
@@ -176,9 +183,3 @@
 	
 </body>
 </html> 
-
-
-
-
-
-

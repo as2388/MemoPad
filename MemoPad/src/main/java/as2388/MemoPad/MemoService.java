@@ -31,6 +31,13 @@ public class MemoService
 		//get the user's collection from the database
 		DBCollection userMemos = db.getCollection(user);
 		
+		try {
+			Thread.sleep(7000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		//prepare the new memo for insertion
 		BasicDBObject newMemo = new BasicDBObject();
 		newMemo.put("TimeMS", new Date().getTime());
