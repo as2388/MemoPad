@@ -25,7 +25,7 @@ public class MemoService
 	
 	@POST
 	@Path("/addMemo")
-	public void addMemo(@QueryParam("user") String user, @QueryParam("value") String value)
+	public Response addMemo(@QueryParam("user") String user, @QueryParam("value") String value)
 	{ // Adds the memo to the user's database collection
 		
 		//get the user's collection from the database
@@ -39,6 +39,8 @@ public class MemoService
 		
 		//insert the new memo into the user's collection
 		userMemos.insert(newMemo);
+		
+		return Response.status(200).build();
 	}
 	
 	@POST

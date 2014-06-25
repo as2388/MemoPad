@@ -14,6 +14,13 @@
 		.divUIMemo
 		{
 			background-color: lightblue;
+			
+		}
+		.divUIDeleteMemo
+		{
+			/*position:fixed;
+			right:0px;
+			display:inline-block;*/
 		}
 	</style>
 
@@ -28,9 +35,7 @@
 		}
 		UIMemo.prototype.generateHTML = function()
 		{
-			//var eventPath = "'" + this.id +  "'";
-			//alert(eventPath);
-			return "<div onclick='memoClicked(this.id)' id='" + this.id + "' class='divUIMemo'> <p class='pUIMemo'>" + this.value + "</p> </div>";
+			return "<div onclick='memoClicked(this.id)' id='" + this.id + "' class='divUIMemo'> <div class='pUIMemo'>" + this.value + "</div>  </div><p/>";
 		};
 		
 		var UIMemos = [];
@@ -43,12 +48,24 @@
 			//TODO: remove this (changes should happen locally)
 			getMemos();
 		}
+		
+		
 		function addMemo() 
 		{ //adds a memo to the database if the entered string is valid
 			if (!($('#txtInput').val() == "New Memo...")) //  && !($("#txtInput").attr("value")))
 			{		
 				//tell the servlet to add the memo
-				MemoService.addMemo({user: "testuser", value: document.getElementById("txtInput").value});	//register the new memo with the server
+				//MemoService.addMemo({user: "testuser", value: document.getElementById("txtInput").value});
+				
+				var xhr = new XMLHttpRequest();
+				xhr.open("POST", "http://localhost:8080/MemoPad/memo/addMemo?user=testuser&value=" + document.getElementById("txtInput").value, false);
+				xhr.send();
+				console.log(xhr.status);
+				
+				if (xhr.status != 200)
+				{ //we had some sort of error so report this to user. 
+					
+				}
 				
 				//clear the input
 				$("#txtInput").val("");
