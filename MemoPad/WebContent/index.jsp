@@ -3,9 +3,35 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
+	<style>
+		.pUIMemo
+		{
+			font-family: Arial;
+			font-size: 16px;
+			padding: 8px;
+			word-wrap:break-word;
+		}
+		.divUIMemo
+		{
+			background-color: lightblue;
+		}
+	</style>
+
 	<script lang="javascript" src="./js"></script> <!-- RESTEasy -->
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> <!-- jquery -->
-	<script>		
+	<script>
+		function UIMemo(value)
+		{
+			this.value=value;
+		}
+		UIMemo.prototype.generateHTML = function()
+		{
+			return "<div class='divUIMemo'> <p class='pUIMemo'>" + this.value + "</p> </div>";
+		};
+		
+		var UIMemos = [];
+	
+	
 		function addMemo() 
 		{ //adds a memo to the database if the entered string is valid
 			if (!($('#txtInput').val() == "New Memo...")) //  && !($("#txtInput").attr("value")))
@@ -33,13 +59,25 @@
 		}		
 		function getMemos()
 		{ //gets the user's memos from the servlet and displays the values on screen
+			//get the memos from the server in JSON format
 			var servletresponse = MemoService.getMemos({user: "testuser"});
+		
+			//parse the JSON
 			var parsedresponse = JSON.parse(servletresponse);
-			$("#memoDiv").html("");
+			
+			//create the UIMemo objects from the parsed JSON
+			UIMemos=[];
 			for (var i = 0; i < parsedresponse.length; i++)
 			{
-				$("#memoDiv").append("<p>" + parsedresponse[i].Value + "</p>");
+				UIMemos[UIMemos.length] = new UIMemo(parsedresponse[i].Value);
 			}
+			
+			//get each UIMemo to generate its HTML, and put this on the page
+			$("#memoDiv").html("");
+			for (var i = 0; i < UIMemos.length; i++)
+			{
+				$("#memoDiv").append(UIMemos[i].generateHTML());
+			}			
 		}
 		function txtInputBlurred()
 		{
@@ -86,7 +124,7 @@
 </head>
 
 <body onload="pageLoad()">
-	<div  style="opacity:0.95; position:fixed; top:0; left:0; width:100%; background-color:paleturquoise;"><h2 style="font-family:Arial; padding-left:5px;">Memos</h2></div>
+	<div  style="opacity:0.95; position:fixed; top:0; left:0; width:100%; background-color:white;"><h2 style="font-family:Arial; padding-left:5px;">Memos</h2></div>
 	
 	<div style="height:70px"></div> <!-- create space below title bar -->
 	<div id="memoDiv"></div> <!-- on screen space for the memo objects -->
