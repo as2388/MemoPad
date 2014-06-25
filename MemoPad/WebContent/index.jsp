@@ -7,7 +7,7 @@
 		.pUIMemo
 		{
 			font-family: Arial;
-			font-size: 16px;
+			font-size: 15px;
 			padding: 8px;
 			word-wrap:break-word;
 		}
@@ -20,18 +20,29 @@
 	<script lang="javascript" src="./js"></script> <!-- RESTEasy -->
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> <!-- jquery -->
 	<script>
-		function UIMemo(value)
+		function UIMemo(id, value, time)
 		{
+			this.id=id;
 			this.value=value;
+			this.time=time;
 		}
 		UIMemo.prototype.generateHTML = function()
 		{
-			return "<div class='divUIMemo'> <p class='pUIMemo'>" + this.value + "</p> </div>";
+			//var eventPath = "'" + this.id +  "'";
+			//alert(eventPath);
+			return "<div onclick='memoClicked(this.id)' id='" + this.id + "' class='divUIMemo'> <p class='pUIMemo'>" + this.value + "</p> </div>";
 		};
 		
 		var UIMemos = [];
 	
-	
+		function memoClicked(id)
+		{ //TODO: change the behaviour to show options. But for now, deletes the memo item
+			//ask the server to delete this item
+			MemoService.deleteMemo({user: "testuser", memoID: id})
+			
+			//TODO: remove this (changes should happen locally)
+			getMemos();
+		}
 		function addMemo() 
 		{ //adds a memo to the database if the entered string is valid
 			if (!($('#txtInput').val() == "New Memo...")) //  && !($("#txtInput").attr("value")))
@@ -50,9 +61,9 @@
 			getMemos();
 		}
 		function scrollToBottom()
-		{ //animate scroll to bottom of page
+		{ //animate auto scroll to bottom of page
 			$('html, body').animate({ 
-				   scrollTop: $(document).height()-$(window).height()+30}, 
+				   scrollTop: $(document).height()-$(window).height()+46}, 
 				   500, 
 				   "swing"
 				);
@@ -69,8 +80,14 @@
 			UIMemos=[];
 			for (var i = 0; i < parsedresponse.length; i++)
 			{
-				UIMemos[UIMemos.length] = new UIMemo(parsedresponse[i].Value);
+				UIMemos[UIMemos.length] = new UIMemo(parsedresponse[i]._id.$oid, parsedresponse[i].Value, parsedresponse[i].TimeMS);
 			}
+			
+			//sort the UIMemo objects by Date/Time added
+			UIMemos.sort(function(a,b)
+					{
+						return a.time - b.time;
+					});
 			
 			//get each UIMemo to generate its HTML, and put this on the page
 			$("#memoDiv").html("");
@@ -131,7 +148,7 @@
 	
 	<div style="position:fixed; width:100%; height:30px; opacity:0.95; background-color:white; padding:5px; bottom:0px; ">	
 		<input  style="color: silver;" type="text" id="txtInput" value="New Memo..." onfocus="clearTxtInputDefault()" onblur="txtInputBlurred()" onkeypress="txtInputKeyPress(event)"/>
-		<button style="width:50px; margin-left:0.1cm" type="button" onclick="addMemo()">Add</button>
+		<button style="width:50px; margin-left:0.14cm" type="button" onclick="addMemo()">Add</button>
 	</div>
 	
 	<div style="height:30px"></div> <!-- create space above New Memo Bar -->
