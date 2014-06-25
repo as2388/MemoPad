@@ -3,6 +3,7 @@ package as2388.MemoPad;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -28,9 +29,17 @@ public class MemoService
 	public Response addMemo(@QueryParam("user") String user, @QueryParam("value") String value)
 	{ // Adds the memo to the user's database collection
 		
+		//one in 5 chance of failure
+		Random randomizer = new Random();
+		if (randomizer.nextInt(5) == 0)
+		{
+			return Response.status(500).build();
+		}		
+		
 		//get the user's collection from the database
 		DBCollection userMemos = db.getCollection(user);
 		
+		//latency test
 		try {
 			Thread.sleep(7000);
 		} catch (InterruptedException e) {
