@@ -29,23 +29,23 @@ public class MemoService
 	public Response addMemo(@QueryParam("user") String user, @QueryParam("value") String value)
 	{ // Adds the memo to the user's database collection
 		
-		//one in 5 chance of failure
+		//one in 3 chance of failure
 		Random randomizer = new Random();
-		if (randomizer.nextInt(5) == 0)
+		if (randomizer.nextInt(3) == 0)
 		{
 			return Response.status(500).build();
 		}		
-		
+		else{
 		//get the user's collection from the database
 		DBCollection userMemos = db.getCollection(user);
 		
 		//latency test
-		try {
-			Thread.sleep(7000);
+		/*try {
+			Thread.sleep(4000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
 		
 		//prepare the new memo for insertion
 		BasicDBObject newMemo = new BasicDBObject();
@@ -56,7 +56,7 @@ public class MemoService
 		//insert the new memo into the user's collection
 		userMemos.insert(newMemo);
 		
-		return Response.status(200).build();
+		return Response.status(200).build();}
 	}
 	
 	@POST

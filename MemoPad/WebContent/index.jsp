@@ -43,14 +43,15 @@
 		function memoClicked(id)
 		{ //TODO: change the behaviour to show options. But for now, deletes the memo item
 			//ask the server to delete this item
-			MemoService.deleteMemo({user: "testuser", memoID: id})
+			MemoService.deleteMemo({user: "testuser", memoID: id});
 			
 			//TODO: remove this (changes should happen locally)
 			getMemos();
 		}
 		
+		var addqueue = [];
 		
-		function addMemo() 
+		/*function addMemo() 
 		{ //adds a memo to the database if the entered string is valid
 			if (!($('#txtInput').val() == "New Memo...")) //  && !($("#txtInput").attr("value")))
 			{		
@@ -63,7 +64,8 @@
 							console.log(xhr.status);
 							if (xhr.status != 200)
 							{ //we have an error. 
-								alert('sync failed');
+								alert(document.getElementById("txtInput").value);
+								//addqueue.push(document.getElementById("txtInput").value);
 							}
 							getMemos();
 						}, false);
@@ -73,13 +75,105 @@
 				//clear the input
 				$("#txtInput").val("");
 				$("#txtInput").focus();
-				
-				//scrollToBottom();
 			}
 			
 			//TODO: delete this when memos are added locally
 			
+		}*/
+		
+		function addMemo()
+		{
+			if (!($('#txtInput').val() == "New Memo...")) //  && !($("#txtInput").attr("value")))
+			{
+				addqueue.push($('#txtInput').val());
+				if (addqueue.length == 1)
+				{
+					pushToServer();
+				}
+				
+				//clear the input
+				$("#txtInput").val("");
+				$("#txtInput").focus();
+			}
 		}
+		function pushToServer()
+		{
+			playSyncAnim();
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", "http://localhost:8080/MemoPad/memo/addMemo?user=testuser&value=" + addqueue[0], true);
+			
+			xhr.addEventListener('load', function()
+					{
+						console.log(xhr.status);
+						if (xhr.status == 200)
+						{ //success! Remove item from queue and try next item, if exists
+							addqueue.shift();
+							if (addqueue.length > 0)
+							{
+								pushToServer();
+							}
+							else
+							{
+								stopSyncAnim();
+							}
+						}
+						else
+						{ //we have an error. Alert user and try again
+							console.log("add memo error"); //TODO: create a UI alert
+							
+							//try again in 100ms. This prevents the client becoming unresponsive if the server is unavailable
+							setTimeout(function(){pushToServer();},100);
+							//pushToServer();
+						}
+						getMemos();
+					}, false);
+			
+			xhr.send();
+		}
+		
+		var syncStage=0;
+		var syncAnim;
+		var syncAnimating=false;
+		function syncAnimate()
+		{
+			syncStage++;
+			console.log('syncanim');
+			switch(syncStage)
+			{
+				case 1:
+					$('#synclabel').text('.');
+					break;
+				case 2:
+					$('#synclabel').text('..');
+					break;
+				case 3:
+					$('#synclabel').text('...');
+					break;
+				case 4:
+					$('#synclabel').text('');
+					break;
+			}
+			
+			if (syncStage >= 4)
+			{
+				syncStage=0;
+			}
+		}
+		function playSyncAnim()
+		{
+			if (!syncAnimating)
+			{
+				syncAnim = setInterval(function(){syncAnimate();},500);
+				syncAnimating=true;
+			}
+		}
+		function stopSyncAnim()
+		{
+			clearInterval(syncAnim);
+			syncAnimating=false;
+			$('#synclabel').text('');
+		}
+		
 		function scrollToBottom()
 		{ //animate auto scroll to bottom of page
 			$('html, body').animate({ 
@@ -171,6 +265,7 @@
 	<div style="position:fixed; width:100%; height:30px; opacity:0.95; background-color:white; padding:5px; bottom:0px; ">	
 		<input  style="color: silver;" type="text" id="txtInput" value="New Memo..." onfocus="clearTxtInputDefault()" onblur="txtInputBlurred()" onkeypress="txtInputKeyPress(event)"/>
 		<button style="width:50px; margin-left:0.14cm" type="button" onclick="addMemo()">Add</button>
+		<label  style="font-family:Arial;" id="synclabel"></label>
 	</div>
 	
 	<div style="height:30px"></div> <!-- create space above New Memo Bar -->
