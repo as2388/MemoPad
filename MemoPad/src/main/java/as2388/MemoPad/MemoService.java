@@ -88,7 +88,7 @@ public class MemoService
 	@Path("/deleteMemo")
 	public Response deleteMemo(@QueryParam("user") String user, @QueryParam("memoID") String memoID)
 	{ //delete's the memo of the specified id from the specified user's collection
-		delay();
+		//delay();
 		
 		//get the user's collection from the database
 		DBCollection userMemos = db.getCollection(user);

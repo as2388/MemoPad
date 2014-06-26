@@ -27,15 +27,25 @@
 	<script lang="javascript" src="./js"></script> <!-- RESTEasy -->
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> <!-- jquery -->
 	<script>
+		var localIDvalue=0;
+		var localIDPointer;
 		function UIMemo(id, value, time)
 		{
 			this.id=id;
 			this.value=value;
 			this.time=time;
+			this.deleted=false;
 		}
 		UIMemo.prototype.generateHTML = function()
 		{
-			return "<div onclick='memoClicked(this.id)' id='" + this.id + "' class='divUIMemo'> <div class='pUIMemo'>" + this.value + "</div>  </div><p/>";
+			if (this.deleted)
+			{
+				return "";	
+			}
+			else
+			{
+				return "<div onclick='memoClicked(this.id)' id='" + this.id + "' class='divUIMemo'> <div class='pUIMemo'>" + this.value + "</div>  </div><p/>";
+			}
 		};
 		
 		var UIMemos = [];
@@ -61,13 +71,15 @@
 					UIMemos[0]=new UIMemo(0,$('#txtInput').val(), new Date().getTime());
 				}
 				
-				UIMemos[UIMemos.length]=new UIMemo(0,$('#txtInput').val(), UIMemos[UIMemos.length-1].time+1);
+				UIMemos[UIMemos.length]=new UIMemo(localIDvalue,$('#txtInput').val(), UIMemos[UIMemos.length-1].time + 1);
+				localIDvalue+=1;
+				
 				//add to screen
 				$("#memoDiv").append(UIMemos[UIMemos.length-1].generateHTML());
 				scrollToBottom();
 				
 				//if the async server push routine is not running, start it.				
-				addqueue.push($('#txtInput').val());
+				addqueue.push(UIMemos[UIMemos.length-1]);
 				if (addqueue.length == 1)
 				{
 					pushToServer();
@@ -82,7 +94,7 @@
 		{
 			playSyncAnim();
 			var xhr = new XMLHttpRequest();
-			xhr.open("POST", "http://localhost:8080/MemoPad/memo/addMemo?user=testuser&value=" + addqueue[0], true);
+			xhr.open("POST", "http://localhost:8080/MemoPad/memo/addMemo?user=testuser&value=" + addqueue[0].value, true);
 			
 			xhr.addEventListener('load', function()
 					{
@@ -90,13 +102,17 @@
 						if (xhr.status == 200)
 						{ //success! Remove item from queue and try next item, if exists
 							addqueue.shift();
+							
+							UIMemos[localIDPointer].id=xhr.response;
+							localIDPointer+=1;
+							displayMemos();
 							if (addqueue.length > 0)
 							{
 								pushToServer();
 							}
 							else
 							{
-								stopSyncAnim();
+								tryStopSyncAnim();
 							}
 						}
 						else
@@ -113,27 +129,78 @@
 			xhr.send();
 		}
 		
+		var deleteCount=0;
 		function deleteMemo(id)
-		{
+		{ //delete the memo of specified id
+			//if the memo is in the queue to be sent to the server (ie it only exists locally) just delete it
+			for (var j=1; j<addqueue.length; j++)
+			{
+				if (addqueue[j].id == id)
+				{
+					//delete from addqueue
+					addqueue.splice(j,1);
+					return;
+				}
+			}
+			
+			//if we hit this line the item is not in addqueue, or is at position 0 of addqueue
+			//Assume not in addqueue for now TODO: don't assume this!
 			var xhr = new XMLHttpRequest();
 			xhr.open("POST", "http://localhost:8080/MemoPad/memo/deleteMemo?user=testuser&memoID=" + id, true);
 			
+			
+			/*var latestPointer=null;
+			if (addqueue.length > 0)
+			{
+				if (addqueue[0].id == id)
+				{
+					latestPointer=localIDPointer;
+				}
+			}*/
+			
+			for (var i=0; i<UIMemos.length; i++)
+			{
+				if (UIMemos[i].id==id)
+				{
+					UIMemos[i].deleted=true;
+				}
+			}
+			displayMemos();
+			
 			xhr.addEventListener('load', function()
 					{
-						console.log(xhr.status);
+						//console.log(xhr.status);
 						if (xhr.status!=200)
 						{ //we have an error. Check for more info:
 							if (xhr.status==404)
-							{ //requested item not in database; no action required
+							{ //requested item not in database;
+								//TODO: if add request in progress try again else treat as code 200
+								console.log('error 404!');
 								
+								/*if (latestPointer!=null)
+								{ //try again: we need to delete an item which is in the process of being added to the database
+									//setTimeout(function(){deleteMemo(addqueue[latestPointer].id);},100);
+								}
+								else
+								{ *///no action required?
+									deleteCount--;
+									tryStopSyncAnim();
+								//}
 							}
 							else
 							{ //something else went wrong. Try again
 								setTimeout(function(){deleteMemo(id);},100);
 							}
 						}
+						else
+						{ //delete was successful
+							deleteCount--;
+							tryStopSyncAnim();
+						}
 					}, false);
-					
+				
+			deleteCount++;
+			playSyncAnim();
 			xhr.send();
 		}
 		
@@ -179,11 +246,14 @@
 				syncAnimating=true;
 			}
 		}
-		function stopSyncAnim()
+		function tryStopSyncAnim()
 		{
-			clearInterval(syncAnim);
-			syncAnimating=false;
-			$('#synclabel').text('');
+			if (addqueue.length == 0 /*&& TODO: not deleting*/)
+			{
+				clearInterval(syncAnim);
+				syncAnimating=false;
+				$('#synclabel').text('');
+			}
 		}
 		
 		function scrollToBottom()
@@ -216,15 +286,25 @@
 						return a.time - b.time;
 					});
 			
+			//TODO:comment
+			localIDPointer=UIMemos.length;
+			
+			
+			displayMemos();
+			
+			scrollToBottom();
+		}
+		
+		function displayMemos()
+		{
 			//get each UIMemo to generate its HTML, and put this on the page
 			$("#memoDiv").html("");
 			for (var i = 0; i < UIMemos.length; i++)
 			{
 				$("#memoDiv").append(UIMemos[i].generateHTML());
 			}	
-			
-			scrollToBottom();
 		}
+		
 		function txtInputBlurred()
 		{
 			if (document.getElementById("txtInput").value == "")
