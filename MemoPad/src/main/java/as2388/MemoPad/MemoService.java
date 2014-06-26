@@ -1,12 +1,18 @@
 package as2388.MemoPad;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
@@ -23,7 +29,7 @@ import com.mongodb.MongoClient;
 public class MemoService 
 {
 	DB db; //database containing the memos
-	int latencyMS = 4000;
+	int latencyMS = 0;
 	private void delay()
 	{
 		if (latencyMS!=0)
@@ -42,10 +48,13 @@ public class MemoService
 	@Path("/addMemo")
 	public Response addMemo(@QueryParam("user") String user, @QueryParam("value") String value)
 	{ // Adds the memo to the user's database collection
+		if (!(value.equals("")))
+		{
+		
 		
 		//one in 3 chance of failure
 		Random randomizer = new Random();
-		if (randomizer.nextInt(3) == 0)
+		if (randomizer.nextInt(3) == -1)
 		{
 			return Response.status(500).build();
 		}		
@@ -67,6 +76,11 @@ public class MemoService
 		
 		//return the ok response and the id of the object
 		return Response.status(200).entity(newMemo.get("_id")).build();}
+		}
+		else
+		{
+			return Response.status(400).build();
+		}
 	}
 	
 	@POST

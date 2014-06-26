@@ -9,18 +9,26 @@
 			font-family: Arial;
 			font-size: 15px;
 			padding: 8px;
+			/*display: block;*/
 			word-wrap:break-word;
 		}
 		.divUIMemo
 		{
 			background-color: lightblue;
+			padding-top: 8px;
+			padding-bottom: 8px;
 			
 		}
 		.divUIDeleteMemo
 		{
-			/*position:fixed;
-			right:0px;
-			display:inline-block;*/
+			/*position:fixed;*/
+			right:15px;
+			font-family: Arial;
+			color: white;
+			padding: 8px;
+			margin: -8px;
+			
+			background-color: coral;
 		}
 	</style>
 
@@ -44,7 +52,7 @@
 			}
 			else
 			{
-				return "<div onclick='memoClicked(this.id)' id='" + this.id + "' class='divUIMemo'> <div class='pUIMemo'>" + this.value + "</div>  </div><p/>";
+				return "<div onclick='memoClicked(this.id)' id='" + this.id + "' class='divUIMemo'> <label class='pUIMemo'>" + this.value + "</label> <!--<label class='divUIDeleteMemo'>X</label>-->  </div><p/>";
 			}
 		};
 		
@@ -52,18 +60,13 @@
 	
 		function memoClicked(id)
 		{ //TODO: change the behaviour to show options. But for now, deletes the memo item
-			//ask the server to delete this item
-			//MemoService.deleteMemo({user: "testuser", memoID: id});
 			deleteMemo(id, null);
-			
-			//TODO: remove this (changes should happen locally)
-			//getMemos();
 		}
 		
 		var addqueue = [];		
 		function addMemo()
 		{
-			if (!($('#txtInput').val() == "New Memo...")) //  && !($("#txtInput").attr("value")))
+			if (!($('#txtInput').val() == "New Memo..." || $('#txtInput').val().trim() == "")) //  && !($("#txtInput").attr("value")))
 			{
 				//create locally
 				if (UIMemos.length == 0)
@@ -98,11 +101,10 @@
 			
 			xhr.addEventListener('load', function()
 					{
-						console.log(xhr.response);
+						//console.log(xhr.response);
 						if (xhr.status == 200)
 						{ //success! Remove item from queue and try next item, if exists
 							addqueue.shift();
-							
 							UIMemos[localIDPointer].id=xhr.response;
 							localIDPointer+=1;
 							displayMemos();
@@ -115,15 +117,17 @@
 								tryStopSyncAnim();
 							}
 						}
+						else if (xhr.response == 400)
+						{
+							addqueue.shift();
+							tryStopSyncAnim();
+						}
 						else
-						{ //we have an error. Alert user and try again
-							//console.log("add memo error"); //TODO: create a UI alert
-							
+						{ //we have an error.
 							//try again in 100ms. This prevents the client becoming unresponsive if the server is unavailable
 							setTimeout(function(){pushToServer();},100);
-							//pushToServer();
 						}
-						//getMemos();
+							
 					}, false);
 			
 			xhr.send();
@@ -144,7 +148,6 @@
 			}
 			
 			//if we hit this line the item is not in addqueue, or is at position 0 of addqueue
-			//Assume not in addqueue for now TODO: don't assume this!
 			var xhr = new XMLHttpRequest();
 			xhr.open("POST", "http://localhost:8080/MemoPad/memo/deleteMemo?user=testuser&memoID=" + id, true);
 			
@@ -170,14 +173,10 @@
 			
 			xhr.addEventListener('load', function()
 					{
-						//console.log(xhr.status);
 						if (xhr.status!=200)
 						{ //we have an error. Check for more info:
 							if (xhr.status==404)
-							{ //requested item not in database;
-								//TODO: if add request in progress try again else treat as code 200
-								console.log('error 404!');
-								
+							{ //requested item not in database;								
 								if (latestPointer!=null)
 								{ //try again: we need to delete an item which is in the process of being added to the database
 									setTimeout(function(){deleteMemo(UIMemos[latestPointer].id, latestPointer);},100);
@@ -250,7 +249,7 @@
 		}
 		function tryStopSyncAnim()
 		{
-			if (addqueue.length == 0 /*&& TODO: not deleting*/)
+			if (addqueue.length == 0 && deleteCount == 0)
 			{
 				clearInterval(syncAnim);
 				syncAnimating=false;
@@ -288,9 +287,7 @@
 						return a.time - b.time;
 					});
 			
-			//TODO:comment
 			localIDPointer=UIMemos.length;
-			
 			
 			displayMemos();
 			
@@ -346,7 +343,8 @@
 		};
 		function resize()
 		{ //resize the button and input to fit screen
-			$("#txtInput").css("width", $(window).width()-100);
+			$("#txtInput").css("width", $(window).width()-100);			
+			//$(".divUIDeleteMemo").css("margin-left", $(window).width()-70);
 		}
 	</script>
 </head>
