@@ -55,6 +55,11 @@
 			if (!($('#txtInput').val() == "New Memo...")) //  && !($("#txtInput").attr("value")))
 			{
 				//create locally
+				if (UIMemos.length == 0)
+				{
+					UIMemos[0]=new UIMemo(0,$('#txtInput').val(), new Date().getTime());
+				}
+				
 				UIMemos[UIMemos.length]=new UIMemo(0,$('#txtInput').val(), UIMemos[UIMemos.length-1].time+1);
 				//add to screen
 				$("#memoDiv").append(UIMemos[UIMemos.length-1].generateHTML());
@@ -101,7 +106,7 @@
 							setTimeout(function(){pushToServer();},100);
 							//pushToServer();
 						}
-						getMemos();
+						//getMemos();
 					}, false);
 			
 			xhr.send();
@@ -135,6 +140,13 @@
 				syncStage=0;
 			}
 		}
+		window.onbeforeunload = function(e)
+		{ //if synchronisation is incomplete ask the user if they really want to cllose the page
+			if (syncAnimating)
+			{
+				return 'Not all changes have been synchronised with the server. If you continue, some changes will be lost';
+			}
+		};
 		function playSyncAnim()
 		{
 			if (!syncAnimating)
@@ -152,6 +164,7 @@
 		
 		function scrollToBottom()
 		{ //animate auto scroll to bottom of page
+			$('html, body').stop();
 			$('html, body').animate({ 
 				   scrollTop: $(document).height()-$(window).height()+46}, 
 				   500, 
