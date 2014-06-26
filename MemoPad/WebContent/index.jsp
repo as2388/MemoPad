@@ -43,10 +43,11 @@
 		function memoClicked(id)
 		{ //TODO: change the behaviour to show options. But for now, deletes the memo item
 			//ask the server to delete this item
-			MemoService.deleteMemo({user: "testuser", memoID: id});
+			//MemoService.deleteMemo({user: "testuser", memoID: id});
+			deleteMemo(id);
 			
 			//TODO: remove this (changes should happen locally)
-			getMemos();
+			//getMemos();
 		}
 		
 		var addqueue = [];		
@@ -85,7 +86,6 @@
 			
 			xhr.addEventListener('load', function()
 					{
-						console.log(xhr.status);
 						if (xhr.status == 200)
 						{ //success! Remove item from queue and try next item, if exists
 							addqueue.shift();
@@ -100,7 +100,7 @@
 						}
 						else
 						{ //we have an error. Alert user and try again
-							console.log("add memo error"); //TODO: create a UI alert
+							//console.log("add memo error"); //TODO: create a UI alert
 							
 							//try again in 100ms. This prevents the client becoming unresponsive if the server is unavailable
 							setTimeout(function(){pushToServer();},100);
@@ -112,13 +112,36 @@
 			xhr.send();
 		}
 		
+		function deleteMemo(id)
+		{
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", "http://localhost:8080/MemoPad/memo/deleteMemo?user=testuser&memoID=" + id, true);
+			
+			xhr.addEventListener('load', function()
+					{
+						console.log(xhr.status);
+						if (xhr.status!=200)
+						{ //we have an error. Check for more info:
+							if (xhr.status==404)
+							{ //requested item not in database; no action required
+								
+							}
+							else
+							{ //something else went wrong. Try again
+								setTimeout(function(){deleteMemo(id);},100);
+							}
+						}
+					}, false);
+					
+			xhr.send();
+		}
+		
 		var syncStage=0;
 		var syncAnim;
 		var syncAnimating=false;
 		function syncAnimate()
 		{
 			syncStage++;
-			console.log('syncanim');
 			switch(syncStage)
 			{
 				case 1:

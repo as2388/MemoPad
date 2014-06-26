@@ -23,6 +23,20 @@ import com.mongodb.MongoClient;
 public class MemoService 
 {
 	DB db; //database containing the memos
+	int latencyMS = 4000;
+	private void delay()
+	{
+		if (latencyMS!=0)
+		{
+			try {
+				Thread.sleep(latencyMS);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	
 	@POST
 	@Path("/addMemo")
@@ -39,13 +53,8 @@ public class MemoService
 		//get the user's collection from the database
 		DBCollection userMemos = db.getCollection(user);
 		
-		//latency test
-		try {
-			Thread.sleep(4000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		//simulate high latency
+		delay();
 		
 		//prepare the new memo for insertion
 		BasicDBObject newMemo = new BasicDBObject();
@@ -76,16 +85,26 @@ public class MemoService
 	
 	@POST
 	@Path("/deleteMemo")
-	public void deleteMemo(@QueryParam("user") String user, @QueryParam("memoID") String memoID)
+	public Response deleteMemo(@QueryParam("user") String user, @QueryParam("memoID") String memoID)
 	{ //delete's the memo of the specified id from the specified user's collection
+		delay();
+		
 		//get the user's collection from the database
 		DBCollection userMemos = db.getCollection(user);
-		
-		DBObject toDelete = new BasicDBObject("_id", new ObjectId(memoID));
-		
-		userMemos.remove(toDelete);
-	}
 	
+		try
+		{
+		//delete the item from the user's collection
+		DBObject toDelete = new BasicDBObject("_id", new ObjectId(memoID));
+		userMemos.remove(toDelete);
+		
+		return Response.status(200).build();
+		}
+		catch(java.lang.IllegalArgumentException e)
+		{
+			return Response.status(404).build();
+		}
+	}
 	
 	//Initialise database
 	public MemoService() throws UnknownHostException
