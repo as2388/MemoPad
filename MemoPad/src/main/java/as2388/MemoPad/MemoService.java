@@ -40,12 +40,12 @@ public class MemoService
 		DBCollection userMemos = db.getCollection(user);
 		
 		//latency test
-		/*try {
+		try {
 			Thread.sleep(4000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}*/
+		}
 		
 		//prepare the new memo for insertion
 		BasicDBObject newMemo = new BasicDBObject();

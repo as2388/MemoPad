@@ -49,42 +49,18 @@
 			getMemos();
 		}
 		
-		var addqueue = [];
-		
-		/*function addMemo() 
-		{ //adds a memo to the database if the entered string is valid
-			if (!($('#txtInput').val() == "New Memo...")) //  && !($("#txtInput").attr("value")))
-			{		
-				//tell the servlet to add the memo
-				var xhr = new XMLHttpRequest();
-				xhr.open("POST", "http://localhost:8080/MemoPad/memo/addMemo?user=testuser&value=" + document.getElementById("txtInput").value, true);
-				
-				xhr.addEventListener('load', function()
-						{
-							console.log(xhr.status);
-							if (xhr.status != 200)
-							{ //we have an error. 
-								alert(document.getElementById("txtInput").value);
-								//addqueue.push(document.getElementById("txtInput").value);
-							}
-							getMemos();
-						}, false);
-				
-				xhr.send();
-				
-				//clear the input
-				$("#txtInput").val("");
-				$("#txtInput").focus();
-			}
-			
-			//TODO: delete this when memos are added locally
-			
-		}*/
-		
+		var addqueue = [];		
 		function addMemo()
 		{
 			if (!($('#txtInput').val() == "New Memo...")) //  && !($("#txtInput").attr("value")))
 			{
+				//create locally
+				UIMemos[UIMemos.length]=new UIMemo(0,$('#txtInput').val(), UIMemos[UIMemos.length-1].time+1);
+				//add to screen
+				$("#memoDiv").append(UIMemos[UIMemos.length-1].generateHTML());
+				scrollToBottom();
+				
+				//if the async server push routine is not running, start it.				
 				addqueue.push($('#txtInput').val());
 				if (addqueue.length == 1)
 				{
@@ -154,7 +130,7 @@
 					break;
 			}
 			
-			if (syncStage >= 4)
+			if (syncStage >= 3)
 			{
 				syncStage=0;
 			}
@@ -257,7 +233,8 @@
 </head>
 
 <body onload="pageLoad()">
-	<div  style="opacity:0.95; position:fixed; top:0; left:0; width:100%; background-color:white;"><h2 style="font-family:Arial; padding-left:5px;">Memos</h2></div>
+	<div style="opacity:0.9; position:fixed; top:0; left:0; width:100%; background-color:white;"><h2 style="font-family:Arial; padding-left:5px;">Memos</h2></div>
+	
 	
 	<div style="height:70px"></div> <!-- create space below title bar -->
 	<div id="memoDiv"></div> <!-- on screen space for the memo objects -->
