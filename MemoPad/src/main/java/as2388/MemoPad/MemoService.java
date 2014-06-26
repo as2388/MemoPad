@@ -65,7 +65,8 @@ public class MemoService
 		//insert the new memo into the user's collection
 		userMemos.insert(newMemo);
 		
-		return Response.status(200).build();}
+		//return the ok response and the id of the object
+		return Response.status(200).entity(newMemo.get("_id")).build();}
 	}
 	
 	@POST
@@ -94,11 +95,11 @@ public class MemoService
 	
 		try
 		{
-		//delete the item from the user's collection
-		DBObject toDelete = new BasicDBObject("_id", new ObjectId(memoID));
-		userMemos.remove(toDelete);
+			//delete the item from the user's collection
+			DBObject toDelete = new BasicDBObject("_id", new ObjectId(memoID));
+			userMemos.remove(toDelete);
 		
-		return Response.status(200).build();
+			return Response.status(200).build();
 		}
 		catch(java.lang.IllegalArgumentException e)
 		{

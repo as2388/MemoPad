@@ -86,6 +86,7 @@
 			
 			xhr.addEventListener('load', function()
 					{
+						console.log(xhr.response);
 						if (xhr.status == 200)
 						{ //success! Remove item from queue and try next item, if exists
 							addqueue.shift();
