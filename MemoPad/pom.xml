@@ -52,11 +52,19 @@
   			<scope>provided</scope>
 		</dependency>
 		
-		<!-- Dependency for MongoDB -->
+		<!-- Dependency for MongoDB's Java driver -->
 		<dependency>
 			<groupId>org.mongodb</groupId>
 			<artifactId>mongo-java-driver</artifactId>
-		<version>2.10.1</version>
-	</dependency>
+			<version>2.10.1</version>
+		</dependency>
+			
+		<!-- Dependency for JUnit -->
+		<dependency>
+  			<groupId>junit</groupId>
+  			<artifactId>junit</artifactId>
+  			<version>4.11</version>
+  			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>
