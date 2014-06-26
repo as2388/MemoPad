@@ -54,7 +54,7 @@
 		{ //TODO: change the behaviour to show options. But for now, deletes the memo item
 			//ask the server to delete this item
 			//MemoService.deleteMemo({user: "testuser", memoID: id});
-			deleteMemo(id);
+			deleteMemo(id, null);
 			
 			//TODO: remove this (changes should happen locally)
 			//getMemos();
@@ -130,7 +130,7 @@
 		}
 		
 		var deleteCount=0;
-		function deleteMemo(id)
+		function deleteMemo(id, latestPointer) //call by setting latestPointer to null
 		{ //delete the memo of specified id
 			//if the memo is in the queue to be sent to the server (ie it only exists locally) just delete it
 			for (var j=1; j<addqueue.length; j++)
@@ -148,15 +148,16 @@
 			var xhr = new XMLHttpRequest();
 			xhr.open("POST", "http://localhost:8080/MemoPad/memo/deleteMemo?user=testuser&memoID=" + id, true);
 			
-			
-			/*var latestPointer=null;
-			if (addqueue.length > 0)
+			if (latestPointer==null)
 			{
-				if (addqueue[0].id == id)
+				if (addqueue.length > 0)
 				{
-					latestPointer=localIDPointer;
+					if (addqueue[0].id == id)
+					{
+						latestPointer=localIDPointer;
+					}
 				}
-			}*/
+			}
 			
 			for (var i=0; i<UIMemos.length; i++)
 			{
@@ -177,19 +178,19 @@
 								//TODO: if add request in progress try again else treat as code 200
 								console.log('error 404!');
 								
-								/*if (latestPointer!=null)
+								if (latestPointer!=null)
 								{ //try again: we need to delete an item which is in the process of being added to the database
-									//setTimeout(function(){deleteMemo(addqueue[latestPointer].id);},100);
+									setTimeout(function(){deleteMemo(UIMemos[latestPointer].id, latestPointer);},100);
 								}
 								else
-								{ *///no action required?
+								{ //no action required?
 									deleteCount--;
 									tryStopSyncAnim();
-								//}
+								}
 							}
 							else
 							{ //something else went wrong. Try again
-								setTimeout(function(){deleteMemo(id);},100);
+								setTimeout(function(){deleteMemo(id, null);},100);
 							}
 						}
 						else
