@@ -243,6 +243,7 @@
 		{
 			if (!syncAnimating)
 			{
+				syncStage=0;
 				syncAnim = setInterval(function(){syncAnimate();},500);
 				syncAnimating=true;
 			}
