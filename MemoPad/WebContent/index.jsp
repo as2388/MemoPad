@@ -1,5 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
-    pageEncoding="ISO-8859-1"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"  pageEncoding="ISO-8859-1"%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -151,14 +150,15 @@
 			if (thisUIMemo.owner==0)
 			{ 
 				//delete locally
+				console.log("here");
+				playSyncAnim();
+				
 				thisUIMemo.deleted = true;
 				displayMemos();
 					
 				//try to delete from server
 				tryDelete(thisUIMemo.id);
-				opCount++;
-				playSyncAnim();
-				
+				opCount++;				
 			}
 		}
 		
@@ -169,13 +169,9 @@
 			
 			xhr.addEventListener('load', function()
 					{
-						console.log(xhr.status);
 						if (xhr.status!=200)
-						{ //we have an error. Check for more info:
-							
-							 //something else went wrong. Try again
-								setTimeout(function(){tryDelete(guid);},100);
-							
+						{ //something else went wrong. Try again
+							setTimeout(function(){tryDelete(guid);},100);
 						}
 						else
 						{ //delete was successful
@@ -232,12 +228,12 @@
 		}
 		function tryStopSyncAnim()
 		{
-			if (opCount == 0)
+			if (opCount == 0 && !getSynching)
 			{
 				clearInterval(syncAnim);
 				synching=false;
 				$('#synclabel').text('');
-				getMemos(); //ok to poll for update now
+				//getMemos(); //ok to poll for update now
 			}
 		}
 		
@@ -253,38 +249,76 @@
 		function getMemos()
 		{ //gets the user's memos from the servlet and displays the values on screen
 			
-			UIMemos=[];
+			//UIMemos=[];
 			//get memos for each user
+			newUIMemos = [];
+			//console.log("call");
 			for (var k=0; k < users.length; k++)
 			{			
-				//get the memos from the server in JSON format
-				var servletresponse = MemoService.getMemos({user: users[k].name});
+				asyncGetCount++;
+				tryGetMemos(k);
+			}	
+		}
+		
+		var asyncGetCount=0; //the number of asynchronousy running tryGetMemos() threads
+		var newUIMemos = [];
+		var getSynching=false;
+		function tryGetMemos(k)
+		{
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", "http://localhost:8080/MemoPad/memo/getMemos?user=" + users[k].name, true);
 			
-				//parse the JSON
-				var parsedresponse = JSON.parse(servletresponse);
-				
-				//create the UIMemo objects from the parsed JSON
-				//UIMemos=[];
-				for (var i = 0; i < parsedresponse.length; i++)
-				{
-					UIMemos[UIMemos.length] = new UIMemo(parsedresponse[i].Guid, parsedresponse[i].Value, parsedresponse[i].TimeMS, k);
-				}
-			}
-			
-			//sort the UIMemo objects by Date/Time added
-			UIMemos.sort(function(a,b)
+			xhr.addEventListener('load', function()
 					{
-						return a.time - b.time;
-					});
+						if (xhr.status!=200)
+						{ //something else went wrong. Try again
+							setTimeout(function(){tryGetMemos(user);},100);
+						}
+						else
+						{ //success!
+							asyncGetCount--;
+								
+							//parse the newly received memos and add these to the list of new memos
+							//get the memos from the server in JSON format
+							//console.log(xhr.response);
+							var servletresponse = xhr.response;
+							//parse the JSON
+							var parsedresponse = JSON.parse(servletresponse);
+							//create the UIMemo objects from the parsed JSON
+							for (var i = 0; i < parsedresponse.length; i++)
+							{
+								newUIMemos[newUIMemos.length] = new UIMemo(parsedresponse[i].Guid, parsedresponse[i].Value, parsedresponse[i].TimeMS, k);
+							}
+							
+							//console.log(UIMemos.length);
+							//console.log(newUIMemos.length);
+							
+							//if the asnycCetCount is zero, then update the display
+							if (asyncGetCount == 0)
+							{
+								
+								UIMemos = newUIMemos;
+								
+								//sort the UIMemo objects by Date/Time added
+								UIMemos.sort(function(a,b)
+										{
+											return a.time - b.time;
+										});
+																
+								displayMemos();
+								
+								getSynching = false;
+								tryStopSyncAnim();
+							}
+						}
+					}, false);
 			
-			localIDPointer=UIMemos.length;
-			
-			displayMemos();
+			xhr.send();
 		}
 		
 		function poll()
 		{
-			if (!synching)
+			if (!synching && asyncGetCount == 0)
 			{
 				getMemos();
 			}
@@ -385,6 +419,9 @@
 			}
 			
 			resize();
+			
+			getSynching = true;
+			playSyncAnim();
 			getMemos();
 		}
 		

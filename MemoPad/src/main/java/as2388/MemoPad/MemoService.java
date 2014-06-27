@@ -34,7 +34,7 @@ import com.mongodb.MongoClient;
 public class MemoService 
 {
 	DB db; //database containing the memos
-	int latencyMS = 5000;
+	int latencyMS = 0;
 	private void delay()
 	{
 		if (latencyMS!=0)
@@ -47,15 +47,6 @@ public class MemoService
 			}
 		}
 	}
-	
-	@POST
-	@Path("/getColor")
-	public Response getColor(@QueryParam("user") String user)	
-	{
-		
-		return null;
-	}
-	
 	
 	@POST
 	@Path("/addMemo")
@@ -86,7 +77,7 @@ public class MemoService
 			userMemos.insert(newMemo);
 			
 			//return the ok response and the id of the object
-			return Response.status(200).entity(newMemo.get("_id")).build();}
+			return Response.status(200).build();}
 		}
 		else
 		{
@@ -98,6 +89,8 @@ public class MemoService
 	@Path("/getMemos")
 	public Response getMemos(@QueryParam("user") String user)
 	{ //returns all the items in the user's collection in JSON format
+		//delay();
+		
 		//get the user's collection from the database
 		DBCollection userMemos = db.getCollection(user);
 			
@@ -106,7 +99,7 @@ public class MemoService
 		List<DBObject> docArr = myCursor.toArray();
 			
 		//return this list in JSON format
-		return Response.ok().entity(docArr.toString()).build();
+		return Response.status(200).entity(docArr.toString()).build();
 	}
 	
 	@POST
@@ -116,7 +109,7 @@ public class MemoService
 		delay();
 		
 		//get the user's collection from the database
-		DBCollection userMemos = db.getCollection(user);
+		DBCollection userMemos = db.getCollection(user);		
 	
 		try
 		{
@@ -131,7 +124,7 @@ public class MemoService
 		}
 		catch(java.lang.IllegalArgumentException e)
 		{
-			return Response.status(405).build();
+			return Response.status(404).build();
 		}
 	}
 		
