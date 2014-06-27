@@ -34,7 +34,7 @@ import com.mongodb.MongoClient;
 public class MemoService 
 {
 	DB db; //database containing the memos
-	int latencyMS = 2000;
+	int latencyMS = 5000;
 	private void delay()
 	{
 		if (latencyMS!=0)
@@ -59,7 +59,7 @@ public class MemoService
 	
 	@POST
 	@Path("/addMemo")
-	public Response addMemo(@QueryParam("user") String user, @QueryParam("value") String value)
+	public Response addMemo(@QueryParam("user") String user, @QueryParam("value") String value, @QueryParam("guid") String guid)
 	{ // Adds the memo to the user's database collection
 		if (!(value.trim().equals("")))
 		{
@@ -80,7 +80,7 @@ public class MemoService
 			DBObject newMemo = new BasicDBObject();
 			newMemo.put("TimeMS", new Date().getTime());
 			newMemo.put("Value", value);
-			newMemo.put("Priority", 2); //use 0: very low, 2: medium (default for now), 4: very high		
+			newMemo.put("Guid", guid);		
 			
 			//insert the new memo into the user's collection
 			userMemos.insert(newMemo);
@@ -121,14 +121,17 @@ public class MemoService
 		try
 		{
 			//delete the item from the user's collection
-			DBObject toDelete = new BasicDBObject("_id", new ObjectId(memoID));
+			//DBObject toDelete = new BasicDBObject("Guid", new ObjectId(memoID));
+			DBObject toDelete = new BasicDBObject();
+			toDelete.put("Guid", memoID);
+			
 			userMemos.remove(toDelete);
 		
 			return Response.status(200).build();
 		}
 		catch(java.lang.IllegalArgumentException e)
 		{
-			return Response.status(404).build();
+			return Response.status(405).build();
 		}
 	}
 		

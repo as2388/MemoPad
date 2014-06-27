@@ -44,7 +44,6 @@
 			this.color=color;
 		}
 	
-		var localIDvalue=0;
 		var localIDPointer;
 		function UIMemo(id, value, time, owner)
 		{
@@ -65,6 +64,14 @@
 				return "<div onclick='memoClicked(this.id)' id='" + this.id + "' class='divUIMemo' style='background-color:" + users[this.owner].color +"'> <label class='pUIMemo'>" + this.value + "</label> <!--<label class='divUIDeleteMemo'>X</label>-->  </div><p/>";
 			}
 		};
+		function generateguid() 
+		{
+		    function _p8(s) {
+		        var p = (Math.random().toString(16)+"000000000").substr(2,8);
+		        return s ? "-" + p.substr(0,4) + "-" + p.substr(4,4) : p ;
+		    }
+		    return _p8() + _p8(true) + _p8(true) + _p8();
+		}
 		
 		var UIMemos = [];
 	
@@ -73,81 +80,62 @@
 			deleteMemo(id, null);
 		}
 		
-		var addqueue = [];		
+		var opCount=0;		
 		function addMemo()
 		{
-			if (!($('#txtInput').val() == "New Memo..." || $('#txtInput').val().trim() == "")) //  && !($("#txtInput").attr("value")))
+			if (!($('#txtInput').val() == "New Memo..." || $('#txtInput').val().trim() == ""))
 			{
 				//create locally
+				var guid=generateguid();
 				if (UIMemos.length == 0)
 				{
-					UIMemos[0]=new UIMemo(0,$('#txtInput').val(), new Date().getTime(), 0);
+					UIMemos[0]=new UIMemo(guid,$('#txtInput').val(), new Date().getTime(), 0);
+				}
+				else
+				{
+					UIMemos[UIMemos.length]=new UIMemo(guid,$('#txtInput').val(), UIMemos[UIMemos.length-1].time + 1, 0);
 				}
 				
-				UIMemos[UIMemos.length]=new UIMemo(localIDvalue,$('#txtInput').val(), UIMemos[UIMemos.length-1].time + 1, 0);
-				
-				
-				//add to screen
+				//add to screen with fade in animation
 				$("#memoDiv").append(UIMemos[UIMemos.length-1].generateHTML());
-				$("#" + localIDvalue).css("opacity","0");
-				$("#" + localIDvalue).fadeTo(400 , 1, function() {});
+				$("#" + guid).css("opacity","0");
+				$("#" + guid).fadeTo(400 , 1, function() {});
 				scrollToBottom();
 				
-				//if the async server push routine is not running, start it.
-				localIDvalue+=1;
-				addqueue.push(UIMemos[UIMemos.length-1]);
-				if (addqueue.length == 1)
-				{
-					pushToServer();
-				}
+				opCount++;
+				
+				//try to add to the database
+				addToServer($('#txtInput').val(), guid);
 				
 				//clear the input
 				$("#txtInput").val("");
 				$("#txtInput").focus();
 			}
 		}
-		function pushToServer()
+		
+		function addToServer(value, guid)
 		{
 			playSyncAnim();
-			var xhr = new XMLHttpRequest();
-			xhr.open("POST", "http://localhost:8080/MemoPad/memo/addMemo?user=" + username + "&value=" + addqueue[0].value, true);
 			
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", "http://localhost:8080/MemoPad/memo/addMemo?user=" + username + "&value=" + value + "&guid=" + guid, true);
 			xhr.addEventListener('load', function()
 					{
-						//console.log(xhr.response);
-						if (xhr.status == 200)
-						{ //success! Remove item from queue and try next item, if exists
-							addqueue.shift();
-							UIMemos[localIDPointer].id=xhr.response;
-							localIDPointer+=1;
-							displayMemos();
-							if (addqueue.length > 0)
-							{
-								pushToServer();
-							}
-							else
-							{
-								tryStopSyncAnim();
-							}
-						}
-						else if (xhr.response == 400)
-						{
-							addqueue.shift();
-							tryStopSyncAnim();
+						if (xhr.status!=200)
+						{ //we have an error. try again
+							setTimeout(function(){addToServer(value, guid);},100);		
 						}
 						else
-						{ //we have an error.
-							//try again in 100ms. This prevents the client becoming unresponsive if the server is unavailable
-							setTimeout(function(){pushToServer();},100);
+						{ //add was successful
+							opCount--;
+							tryStopSyncAnim();
 						}
-							
 					}, false);
 			
-			xhr.send();
+			xhr.send();	
 		}
 		
-		var deleteCount=0;
-		function deleteMemo(id, latestPointer) //call by setting latestPointer to null
+		function deleteMemo(id)
 		{ //delete the memo of specified id
 			//find the associated UIMemo object
 			var thisUIMemo=new UIMemo(null,null,null,null);
@@ -161,67 +149,42 @@
 			
 			//Memos are read-only to other users, so only delete the memo if it's owned by the current user
 			if (thisUIMemo.owner==0)
-			{ //if the memo is in the queue to be sent to the server (ie it only exists locally) just delete it
-				for (var j=1; j<addqueue.length; j++)
-				{
-					if (addqueue[j].id == id)
-					{
-						//delete from addqueue
-						addqueue.splice(j,1);
-						return null;
-					}
-				}
-				
-				//if we hit this line the item is not in addqueue, or is at position 0 of addqueue
-				var xhr = new XMLHttpRequest();
-				xhr.open("POST", "http://localhost:8080/MemoPad/memo/deleteMemo?user=" + username + "&memoID=" + id, true);
-				
-				if (latestPointer==null)
-				{
-					if (addqueue.length > 0)
-					{
-						if (addqueue[0].id == id)
-						{
-							latestPointer=localIDPointer;
-						}
-					}
-				}
-				
+			{ 
+				//delete locally
 				thisUIMemo.deleted = true;
 				displayMemos();
-				
-				xhr.addEventListener('load', function()
-						{
-							if (xhr.status!=200)
-							{ //we have an error. Check for more info:
-								if (xhr.status==404)
-								{ //requested item not in database;								
-									if (latestPointer!=null)
-									{ //try again: we need to delete an item which is in the process of being added to the database
-										setTimeout(function(){deleteMemo(UIMemos[latestPointer].id, latestPointer);},100);
-									}
-									else
-									{ //no action required?
-										deleteCount--;
-										tryStopSyncAnim();
-									}
-								}
-								else
-								{ //something else went wrong. Try again
-									setTimeout(function(){deleteMemo(id, null);},100);
-								}
-							}
-							else
-							{ //delete was successful
-								deleteCount--;
-								tryStopSyncAnim();
-							}
-						}, false);
 					
-				deleteCount++;
+				//try to delete from server
+				tryDelete(thisUIMemo.id);
+				opCount++;
 				playSyncAnim();
-				xhr.send();
+				
 			}
+		}
+		
+		function tryDelete(guid)
+		{
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", "http://localhost:8080/MemoPad/memo/deleteMemo?user=" + username + "&memoID=" + guid, true);
+			
+			xhr.addEventListener('load', function()
+					{
+						console.log(xhr.status);
+						if (xhr.status!=200)
+						{ //we have an error. Check for more info:
+							
+							 //something else went wrong. Try again
+								setTimeout(function(){tryDelete(guid);},100);
+							
+						}
+						else
+						{ //delete was successful
+							opCount--;
+							tryStopSyncAnim();
+						}
+					}, false);
+			
+			xhr.send();
 		}
 		
 		var syncStage=0;
@@ -269,7 +232,7 @@
 		}
 		function tryStopSyncAnim()
 		{
-			if (addqueue.length == 0 && deleteCount == 0)
+			if (opCount == 0)
 			{
 				clearInterval(syncAnim);
 				synching=false;
@@ -304,7 +267,7 @@
 				//UIMemos=[];
 				for (var i = 0; i < parsedresponse.length; i++)
 				{
-					UIMemos[UIMemos.length] = new UIMemo(parsedresponse[i]._id.$oid, parsedresponse[i].Value, parsedresponse[i].TimeMS, k);
+					UIMemos[UIMemos.length] = new UIMemo(parsedresponse[i].Guid, parsedresponse[i].Value, parsedresponse[i].TimeMS, k);
 				}
 			}
 			
