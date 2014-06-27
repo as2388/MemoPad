@@ -14,7 +14,7 @@
 		}
 		.divUIMemo
 		{
-			background-color: lightblue;
+			
 			padding-top: 8px;
 			padding-bottom: 8px;
 			
@@ -35,13 +35,23 @@
 	<script lang="javascript" src="./js"></script> <!-- RESTEasy -->
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> <!-- jquery -->
 	<script>
+		var username = "";	//stores the name of the current user
+		var users = [];		//list of users on the 
+		var colors = ['lightgreen', 'pink', 'lightsalmon', 'yellow','lightcoral'];
+		function User(name,color)
+		{
+			this.name=name;
+			this.color=color;
+		}
+	
 		var localIDvalue=0;
 		var localIDPointer;
-		function UIMemo(id, value, time)
+		function UIMemo(id, value, time, owner)
 		{
 			this.id=id;
 			this.value=value;
 			this.time=time;
+			this.owner=owner;
 			this.deleted=false;
 		}
 		UIMemo.prototype.generateHTML = function()
@@ -52,7 +62,7 @@
 			}
 			else
 			{
-				return "<div onclick='memoClicked(this.id)' id='" + this.id + "' class='divUIMemo'> <label class='pUIMemo'>" + this.value + "</label> <!--<label class='divUIDeleteMemo'>X</label>-->  </div><p/>";
+				return "<div onclick='memoClicked(this.id)' id='" + this.id + "' class='divUIMemo' style='background-color:" + users[this.owner].color +"'> <label class='pUIMemo'>" + this.value + "</label> <!--<label class='divUIDeleteMemo'>X</label>-->  </div><p/>";
 			}
 		};
 		
@@ -71,17 +81,21 @@
 				//create locally
 				if (UIMemos.length == 0)
 				{
-					UIMemos[0]=new UIMemo(0,$('#txtInput').val(), new Date().getTime());
+					UIMemos[0]=new UIMemo(0,$('#txtInput').val(), new Date().getTime(), 0);
 				}
 				
-				UIMemos[UIMemos.length]=new UIMemo(localIDvalue,$('#txtInput').val(), UIMemos[UIMemos.length-1].time + 1);
-				localIDvalue+=1;
+				UIMemos[UIMemos.length]=new UIMemo(localIDvalue,$('#txtInput').val(), UIMemos[UIMemos.length-1].time + 1, 0);
+				
 				
 				//add to screen
+				
 				$("#memoDiv").append(UIMemos[UIMemos.length-1].generateHTML());
+				$("#" + localIDvalue).css("opacity","0");
+				$("#" + localIDvalue).fadeTo(400 , 1, function() {});
 				scrollToBottom();
 				
-				//if the async server push routine is not running, start it.				
+				//if the async server push routine is not running, start it.
+				localIDvalue+=1;
 				addqueue.push(UIMemos[UIMemos.length-1]);
 				if (addqueue.length == 1)
 				{
@@ -97,7 +111,7 @@
 		{
 			playSyncAnim();
 			var xhr = new XMLHttpRequest();
-			xhr.open("POST", "http://localhost:8080/MemoPad/memo/addMemo?user=testuser&value=" + addqueue[0].value, true);
+			xhr.open("POST", "http://localhost:8080/MemoPad/memo/addMemo?user=" + username + "&value=" + addqueue[0].value, true);
 			
 			xhr.addEventListener('load', function()
 					{
@@ -136,72 +150,79 @@
 		var deleteCount=0;
 		function deleteMemo(id, latestPointer) //call by setting latestPointer to null
 		{ //delete the memo of specified id
-			//if the memo is in the queue to be sent to the server (ie it only exists locally) just delete it
-			for (var j=1; j<addqueue.length; j++)
-			{
-				if (addqueue[j].id == id)
-				{
-					//delete from addqueue
-					addqueue.splice(j,1);
-					return;
-				}
-			}
-			
-			//if we hit this line the item is not in addqueue, or is at position 0 of addqueue
-			var xhr = new XMLHttpRequest();
-			xhr.open("POST", "http://localhost:8080/MemoPad/memo/deleteMemo?user=testuser&memoID=" + id, true);
-			
-			if (latestPointer==null)
-			{
-				if (addqueue.length > 0)
-				{
-					if (addqueue[0].id == id)
-					{
-						latestPointer=localIDPointer;
-					}
-				}
-			}
-			
+			//find the associated UIMemo object
+			var thisUIMemo=new UIMemo(null,null,null,null);
 			for (var i=0; i<UIMemos.length; i++)
 			{
 				if (UIMemos[i].id==id)
 				{
-					UIMemos[i].deleted=true;
+					thisUIMemo = UIMemos[i];
 				}
 			}
-			displayMemos();
 			
-			xhr.addEventListener('load', function()
+			//Memos are read-only to other users, so only delete the memo if it's owned by the current user
+			if (thisUIMemo.owner==0)
+			{ //if the memo is in the queue to be sent to the server (ie it only exists locally) just delete it
+				for (var j=1; j<addqueue.length; j++)
+				{
+					if (addqueue[j].id == id)
 					{
-						if (xhr.status!=200)
-						{ //we have an error. Check for more info:
-							if (xhr.status==404)
-							{ //requested item not in database;								
-								if (latestPointer!=null)
-								{ //try again: we need to delete an item which is in the process of being added to the database
-									setTimeout(function(){deleteMemo(UIMemos[latestPointer].id, latestPointer);},100);
+						//delete from addqueue
+						addqueue.splice(j,1);
+						return null;
+					}
+				}
+				
+				//if we hit this line the item is not in addqueue, or is at position 0 of addqueue
+				var xhr = new XMLHttpRequest();
+				xhr.open("POST", "http://localhost:8080/MemoPad/memo/deleteMemo?user=" + username + "&memoID=" + id, true);
+				
+				if (latestPointer==null)
+				{
+					if (addqueue.length > 0)
+					{
+						if (addqueue[0].id == id)
+						{
+							latestPointer=localIDPointer;
+						}
+					}
+				}
+				
+				thisUIMemo.deleted = true;
+				displayMemos();
+				
+				xhr.addEventListener('load', function()
+						{
+							if (xhr.status!=200)
+							{ //we have an error. Check for more info:
+								if (xhr.status==404)
+								{ //requested item not in database;								
+									if (latestPointer!=null)
+									{ //try again: we need to delete an item which is in the process of being added to the database
+										setTimeout(function(){deleteMemo(UIMemos[latestPointer].id, latestPointer);},100);
+									}
+									else
+									{ //no action required?
+										deleteCount--;
+										tryStopSyncAnim();
+									}
 								}
 								else
-								{ //no action required?
-									deleteCount--;
-									tryStopSyncAnim();
+								{ //something else went wrong. Try again
+									setTimeout(function(){deleteMemo(id, null);},100);
 								}
 							}
 							else
-							{ //something else went wrong. Try again
-								setTimeout(function(){deleteMemo(id, null);},100);
+							{ //delete was successful
+								deleteCount--;
+								tryStopSyncAnim();
 							}
-						}
-						else
-						{ //delete was successful
-							deleteCount--;
-							tryStopSyncAnim();
-						}
-					}, false);
-				
-			deleteCount++;
-			playSyncAnim();
-			xhr.send();
+						}, false);
+					
+				deleteCount++;
+				playSyncAnim();
+				xhr.send();
+			}
 		}
 		
 		var syncStage=0;
@@ -268,17 +289,24 @@
 		}		
 		function getMemos()
 		{ //gets the user's memos from the servlet and displays the values on screen
+			
+			UIMemos=[];
+			for (var k=0; k < users.length; k++)
+			{
+			
+			
 			//get the memos from the server in JSON format
-			var servletresponse = MemoService.getMemos({user: "testuser"});
+			var servletresponse = MemoService.getMemos({user: users[k].name});
 		
 			//parse the JSON
 			var parsedresponse = JSON.parse(servletresponse);
 			
 			//create the UIMemo objects from the parsed JSON
-			UIMemos=[];
+			//UIMemos=[];
 			for (var i = 0; i < parsedresponse.length; i++)
 			{
-				UIMemos[UIMemos.length] = new UIMemo(parsedresponse[i]._id.$oid, parsedresponse[i].Value, parsedresponse[i].TimeMS);
+				UIMemos[UIMemos.length] = new UIMemo(parsedresponse[i]._id.$oid, parsedresponse[i].Value, parsedresponse[i].TimeMS, k);
+			}
 			}
 			
 			//sort the UIMemo objects by Date/Time added
@@ -288,6 +316,7 @@
 					});
 			
 			localIDPointer=UIMemos.length;
+
 			
 			displayMemos();
 			
@@ -333,10 +362,10 @@
 		}
 		function pageLoad()
 		{
-			getMemos();
+			//getMemos();
 			resize();
-			scrollToBottom();
-		}
+			//scrollToBottom();
+        }
 		window.onresize=function()
 		{ 
 			resize();
@@ -346,12 +375,84 @@
 			$("#txtInput").css("width", $(window).width()-100);			
 			//$(".divUIDeleteMemo").css("margin-left", $(window).width()-70);
 		}
+		
+		function signIn()
+		{
+			$('#user').css("display","none");
+			$('#main').css("display","inline");
+			$( "#main" ).fadeTo( "fast" , 1, function() {
+			    // Animation complete.
+			  });
+			username = $('#username').val();
+			users[0]=new User(username, "lightblue");
+			//users[1]=new User("testuser", "lightgreen");
+			$('#title').html("<b>Memos</b> for");
+			
+			for (var i=0; i<users.length; i++)
+			{
+				if(i!=0)
+				{
+					$('#title').append(",");
+				}
+				
+				$('#title').append("<font color='" + users[i].color + "'> " + users[i].name + "</font>");
+			}
+			
+			getMemos();
+		}
+		
+		function editUsers()
+		{
+			if ($('#cmdEditUsers').html() == 'Edit')
+			{
+				$('#cmdEditUsers').html('Done');
+				
+				//display the current list of users in the users input
+				for (var i = 1; i < users.length; i++)
+				{
+					$("#users").append(", " + users[i].name);
+				}
+				
+				
+				$( "#users" ).fadeTo("fast" , 1, function() {});
+			}
+			else
+			{
+				$('#cmdEditUsers').html('Edit');
+				$( "#users" ).fadeTo( "fast" , 0, function() {});
+				
+				//build up the desired list of users from the input field
+				var usernames = $('#users').val().split(",");
+				users=[];
+				users[0]=new User("Alexander", "lightblue");
+				for (var i=0; i<usernames.length; i++)
+				{
+					if (usernames[i] != "")
+					{
+						users[i+1]=new User(usernames[i].trim(), colors[i % colors.length]);
+					}
+				}
+				signIn();
+				getMemos();
+			}	
+		}
 	</script>
 </head>
 
 <body onload="pageLoad()">
-	<div style="opacity:0.9; position:fixed; top:0; left:0; width:100%; background-color:white;"><h2 style="font-family:Arial; padding-left:5px;">Memos</h2></div>
 	
+	<div id="user">	
+		<input id="username" value="Alexander"></input>
+		<button onclick="signIn()">Go</button>
+	</div>
+	
+	<div id="main" style="display: none; opacity:0;">
+
+	<div style="padding-top:10px; padding-left:5px; padding-bottom:10px; font-size:1.5em; opacity:0.9; position:fixed; top:0; left:0; width:100%; background-color:white;">
+		<label  id='title' style="margin-before:0.83em; margin-after:0.83em; font-weight:normal; margin-start:0; margin-end:0; font-family:Arial; padding-left:5px;"></label> 
+		<button id="cmdEditUsers" onclick="editUsers()" style="margin-right:10px; float:right;">Edit</button>
+		<input id="users"  style="margin-left:3px; width:90%; opacity:0;"></input>
+	</div>
 	
 	<div style="height:70px"></div> <!-- create space below title bar -->
 	<div id="memoDiv"></div> <!-- on screen space for the memo objects -->
@@ -363,10 +464,10 @@
 	</div>
 	
 	<div style="height:30px"></div> <!-- create space above New Memo Bar -->
-	
-	
-	<div id="output"></div>
-	
+	</div>
 	
 </body>
 </html> 
+
+
+

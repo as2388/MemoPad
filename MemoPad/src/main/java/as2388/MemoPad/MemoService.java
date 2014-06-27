@@ -1,14 +1,19 @@
 package as2388.MemoPad;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
+import java.util.Scanner;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -29,7 +34,7 @@ import com.mongodb.MongoClient;
 public class MemoService 
 {
 	DB db; //database containing the memos
-	int latencyMS = 0;
+	int latencyMS = 2000;
 	private void delay()
 	{
 		if (latencyMS!=0)
@@ -43,39 +48,45 @@ public class MemoService
 		}
 	}
 	
+	@POST
+	@Path("/getColor")
+	public Response getColor(@QueryParam("user") String user)	
+	{
+		
+		return null;
+	}
+	
 	
 	@POST
 	@Path("/addMemo")
 	public Response addMemo(@QueryParam("user") String user, @QueryParam("value") String value)
 	{ // Adds the memo to the user's database collection
-		if (!(value.equals("")))
+		if (!(value.trim().equals("")))
 		{
-		
-		
-		//one in 3 chance of failure
-		Random randomizer = new Random();
-		if (randomizer.nextInt(3) == -1)
-		{
-			return Response.status(500).build();
-		}		
-		else{
-		//get the user's collection from the database
-		DBCollection userMemos = db.getCollection(user);
-		
-		//simulate high latency
-		delay();
-		
-		//prepare the new memo for insertion
-		BasicDBObject newMemo = new BasicDBObject();
-		newMemo.put("TimeMS", new Date().getTime());
-		newMemo.put("Value", value);
-		newMemo.put("Priority", 2); //use 0: very low, 2: medium (default for now), 4: very high		
-		
-		//insert the new memo into the user's collection
-		userMemos.insert(newMemo);
-		
-		//return the ok response and the id of the object
-		return Response.status(200).entity(newMemo.get("_id")).build();}
+			//one in 3 chance of failure
+			Random randomizer = new Random();
+			if (randomizer.nextInt(3) == -1)
+			{
+				return Response.status(500).build();
+			}		
+			else{
+			//get the user's collection from the database
+			DBCollection userMemos = db.getCollection(user);
+			
+			//simulate high latency
+			delay();
+			
+			//prepare the new memo for insertion
+			DBObject newMemo = new BasicDBObject();
+			newMemo.put("TimeMS", new Date().getTime());
+			newMemo.put("Value", value);
+			newMemo.put("Priority", 2); //use 0: very low, 2: medium (default for now), 4: very high		
+			
+			//insert the new memo into the user's collection
+			userMemos.insert(newMemo);
+			
+			//return the ok response and the id of the object
+			return Response.status(200).entity(newMemo.get("_id")).build();}
 		}
 		else
 		{
@@ -102,7 +113,7 @@ public class MemoService
 	@Path("/deleteMemo")
 	public Response deleteMemo(@QueryParam("user") String user, @QueryParam("memoID") String memoID)
 	{ //delete's the memo of the specified id from the specified user's collection
-		//delay();
+		delay();
 		
 		//get the user's collection from the database
 		DBCollection userMemos = db.getCollection(user);
@@ -120,7 +131,7 @@ public class MemoService
 			return Response.status(404).build();
 		}
 	}
-	
+		
 	//Initialise database
 	public MemoService() throws UnknownHostException
 	{
