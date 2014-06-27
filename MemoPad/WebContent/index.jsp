@@ -315,11 +315,8 @@
 					});
 			
 			localIDPointer=UIMemos.length;
-
 			
 			displayMemos();
-			
-			//scrollToBottom();
 		}
 		
 		function poll()
@@ -382,20 +379,36 @@
 		};
 		function resize()
 		{ //resize the button and input to fit screen
-			$("#txtInput").css("width", $(window).width()-100);			
-			//$(".divUIDeleteMemo").css("margin-left", $(window).width()-70);
+			$("#txtInput").css("width", $(window).width()-100);
+			$("#users").css("width", $(window).width()-100);	
+			$("#topspace").css("height", 15 + parseInt($("#titlebar").css("height")));
+			
+			var size='1.5em';
+				
+			if (parseInt($(window).width()) < 640)
+			{
+				//console.log(parseInt($(window).width()));
+				size="1.2em";
+				if ($(window).width() < 320)
+				{
+					size="1em";
+				}
+			}
+				
+			$("#titlebar").css("font-size", size);
 		}
 		
 		function signIn()
 		{
+			//hide sign in
 			$('#user').css("display","none");
+			//show main page, transition with fade
 			$('#main').css("display","inline");
-			$( "#main" ).fadeTo( "fast" , 1, function() {
-			    // Animation complete.
-			  });
+			$( "#main" ).fadeTo( "fast" , 1, function() {});
+			
+			//set up users
 			username = $('#username').val();
 			users[0]=new User(username, "lightblue");
-			//users[1]=new User("testuser", "lightgreen");
 			$('#title').html("<b>Memos</b> for");
 			
 			for (var i=0; i<users.length; i++)
@@ -408,72 +421,71 @@
 				$('#title').append("<font color='" + users[i].color + "'> " + users[i].name + "</font>");
 			}
 			
+			resize();
 			getMemos();
 		}
 		
 		function editUsers()
 		{
-			if ($('#cmdEditUsers').html() == 'Edit')
+			//display the current list of users in the users input
+			for (var i = 1; i < users.length; i++)
 			{
-				$('#cmdEditUsers').html('Done');
-				
-				//display the current list of users in the users input
-				for (var i = 1; i < users.length; i++)
-				{
-					$("#users").append(", " + users[i].name);
-				}
-				
-				
-				$( "#users" ).fadeTo("fast" , 1, function() {});
+				$("#users").append(", " + users[i].name);
 			}
-			else
+						
+			$( "#users" ).fadeTo("fast" , 1, function() {});	
+			$( "#cmdEditUsers" ).fadeTo("fast" , 0, function() {});
+			$( "#cmdDoneEditUsers" ).fadeTo("fast" , 1, function() {});
+			$( "#users" ).focus();
+			
+		}
+		function doneEditUsers()
+		{
+			//build up the desired list of users from the input field
+			var usernames = $('#users').val().split(",");
+			users=[];
+			users[0]=new User("Alexander", "lightblue");
+			for (var i=0; i<usernames.length; i++)
 			{
-				$('#cmdEditUsers').html('Edit');
-				$( "#users" ).fadeTo( "fast" , 0, function() {});
-				
-				//build up the desired list of users from the input field
-				var usernames = $('#users').val().split(",");
-				users=[];
-				users[0]=new User("Alexander", "lightblue");
-				for (var i=0; i<usernames.length; i++)
+				if (usernames[i].trim() != "")
 				{
-					if (usernames[i] != "")
-					{
-						users[i+1]=new User(usernames[i].trim(), colors[i % colors.length]);
-					}
+					users[i+1]=new User(usernames[i].trim(), colors[i % colors.length]);
 				}
-				signIn();
-				getMemos();
-			}	
+			}
+			signIn();
+			getMemos();
+			
+			$( "#users" ).fadeTo("fast" , 0, function() {});	
+			$( "#cmdEditUsers" ).fadeTo("fast" , 1, function() {});
+			$( "#cmdDoneEditUsers" ).fadeTo("fast" , 0, function() {});
 		}
 	</script>
 </head>
 
 <body onload="pageLoad()">
-	
 	<div id="user">	
 		<input id="username" value="Alexander"></input>
 		<button onclick="signIn()">Go</button>
 	</div>
 	
 	<div id="main" style="display: none; opacity:0;">
-
-	<div style="padding-top:10px; padding-left:5px; padding-bottom:10px; font-size:1.5em; opacity:0.9; position:fixed; top:0; left:0; width:100%; background-color:white;">
-		<label  id='title' style="margin-before:0.83em; margin-after:0.83em; font-weight:normal; margin-start:0; margin-end:0; font-family:Arial; padding-left:5px;"></label> 
-		<button id="cmdEditUsers" onclick="editUsers()" style="margin-right:10px; float:right;">Edit</button>
-		<input id="users"  style="margin-left:3px; width:90%; opacity:0;"></input>
-	</div>
+		<div id="titlebar" style="padding-top:10px; padding-left:5px; padding-bottom:10px; font-size:1.5em; opacity:0.9; position:fixed; top:0; left:0; width:100%; background-color:white;">
+			<label  id='title' style="margin-before:0.83em; margin-after:0.83em; font-weight:normal; margin-start:0; margin-end:0; font-family:Arial; padding-left:5px;"></label> 
+			<button id="cmdEditUsers" onclick="editUsers()" style="margin-right:10px; float:right;">Edit</button>
+			<input  id="users"  style="margin-left:5px; opacity:0;"></input>
+			<button id="cmdDoneEditUsers" style="opacity:0; width:50px; margin-left:0.14cm" type="button" onclick="doneEditUsers()">Done</button>
+		</div>
 	
-	<div style="height:70px"></div> <!-- create space below title bar -->
-	<div id="memoDiv"></div> <!-- on screen space for the memo objects -->
+		<div id="topspace" style="height:0px"></div> <!-- create space below title bar -->
+		<div id="memoDiv"></div> <!-- on screen space for the memo objects -->
 	
-	<div style="position:fixed; width:100%; height:30px; opacity:0.95; background-color:white; padding:5px; bottom:0px; ">	
-		<input  style="color: silver;" type="text" id="txtInput" value="New Memo..." onfocus="clearTxtInputDefault()" onblur="txtInputBlurred()" onkeypress="txtInputKeyPress(event)"/>
-		<button style="width:50px; margin-left:0.14cm" type="button" onclick="addMemo()">Add</button>
-		<label  style="font-family:Arial;" id="synclabel"></label>
-	</div>
+		<div style="position:fixed; width:100%; height:30px; opacity:0.95; background-color:white; padding:5px; bottom:0px; ">	
+			<input  style="color: silver;" type="text" id="txtInput" value="New Memo..." onfocus="clearTxtInputDefault()" onblur="txtInputBlurred()" onkeypress="txtInputKeyPress(event)"/>
+			<button style="width:50px; margin-left:0.14cm" type="button" onclick="addMemo()">Add</button>
+			<label  style="font-family:Arial;" id="synclabel"></label>
+		</div>
 	
-	<div style="height:30px"></div> <!-- create space above New Memo Bar -->
+		<div style="height:30px"></div> <!-- create space above New Memo Bar -->
 	</div>
 	
 </body>
