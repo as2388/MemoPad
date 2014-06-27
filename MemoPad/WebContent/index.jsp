@@ -88,7 +88,6 @@
 				
 				
 				//add to screen
-				
 				$("#memoDiv").append(UIMemos[UIMemos.length-1].generateHTML());
 				$("#" + localIDvalue).css("opacity","0");
 				$("#" + localIDvalue).fadeTo(400 , 1, function() {});
@@ -227,7 +226,7 @@
 		
 		var syncStage=0;
 		var syncAnim;
-		var syncAnimating=false;
+		var synching=false;
 		function syncAnimate()
 		{
 			syncStage++;
@@ -254,18 +253,18 @@
 		}
 		window.onbeforeunload = function(e)
 		{ //if synchronisation is incomplete ask the user if they really want to cllose the page
-			if (syncAnimating)
+			if (synching)
 			{
 				return 'Not all changes have been synchronised with the server. If you continue, some changes will be lost';
 			}
 		};
 		function playSyncAnim()
 		{
-			if (!syncAnimating)
+			if (!synching)
 			{
 				syncStage=0;
 				syncAnim = setInterval(function(){syncAnimate();},500);
-				syncAnimating=true;
+				synching=true;
 			}
 		}
 		function tryStopSyncAnim()
@@ -273,8 +272,9 @@
 			if (addqueue.length == 0 && deleteCount == 0)
 			{
 				clearInterval(syncAnim);
-				syncAnimating=false;
+				synching=false;
 				$('#synclabel').text('');
+				getMemos(); //ok to poll for update now
 			}
 		}
 		
@@ -291,22 +291,21 @@
 		{ //gets the user's memos from the servlet and displays the values on screen
 			
 			UIMemos=[];
+			//get memos for each user
 			for (var k=0; k < users.length; k++)
-			{
+			{			
+				//get the memos from the server in JSON format
+				var servletresponse = MemoService.getMemos({user: users[k].name});
 			
-			
-			//get the memos from the server in JSON format
-			var servletresponse = MemoService.getMemos({user: users[k].name});
-		
-			//parse the JSON
-			var parsedresponse = JSON.parse(servletresponse);
-			
-			//create the UIMemo objects from the parsed JSON
-			//UIMemos=[];
-			for (var i = 0; i < parsedresponse.length; i++)
-			{
-				UIMemos[UIMemos.length] = new UIMemo(parsedresponse[i]._id.$oid, parsedresponse[i].Value, parsedresponse[i].TimeMS, k);
-			}
+				//parse the JSON
+				var parsedresponse = JSON.parse(servletresponse);
+				
+				//create the UIMemo objects from the parsed JSON
+				//UIMemos=[];
+				for (var i = 0; i < parsedresponse.length; i++)
+				{
+					UIMemos[UIMemos.length] = new UIMemo(parsedresponse[i]._id.$oid, parsedresponse[i].Value, parsedresponse[i].TimeMS, k);
+				}
 			}
 			
 			//sort the UIMemo objects by Date/Time added
@@ -320,7 +319,15 @@
 			
 			displayMemos();
 			
-			scrollToBottom();
+			//scrollToBottom();
+		}
+		
+		function poll()
+		{
+			if (!synching)
+			{
+				getMemos();
+			}
 		}
 		
 		function displayMemos()
@@ -362,9 +369,12 @@
 		}
 		function pageLoad()
 		{
-			//getMemos();
 			resize();
-			//scrollToBottom();
+			
+			//set up polling to run every 10s
+			setInterval(poll, 10000);
+			
+			scrollToBottom();
         }
 		window.onresize=function()
 		{ 
