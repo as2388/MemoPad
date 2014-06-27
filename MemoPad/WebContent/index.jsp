@@ -290,13 +290,10 @@
 								newUIMemos[newUIMemos.length] = new UIMemo(parsedresponse[i].Guid, parsedresponse[i].Value, parsedresponse[i].TimeMS, k);
 							}
 							
-							//console.log(UIMemos.length);
-							//console.log(newUIMemos.length);
-							
 							//if the asnycCetCount is zero, then update the display
 							if (asyncGetCount == 0)
-							{
-								
+							{						
+								var oldUIMemos = UIMemos;
 								UIMemos = newUIMemos;
 								
 								//sort the UIMemo objects by Date/Time added
@@ -306,6 +303,24 @@
 										});
 																
 								displayMemos();
+								
+								//animate in new memos
+								for (var i=0; i<UIMemos.length; i++)
+								{
+									var found=false;
+									for (var j=0; j<oldUIMemos.length; j++)
+									{
+										if (UIMemos[i].id == oldUIMemos[j].id)
+										{
+											found=true;
+										}
+									}
+									if (!found)
+									{
+										$("#" + UIMemos[i].id).css("opacity","0");
+										$("#" + UIMemos[i].id).fadeTo(400 , 1, function() {});
+									}
+								}
 								
 								getSynching = false;
 								tryStopSyncAnim();
