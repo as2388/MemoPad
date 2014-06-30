@@ -48,19 +48,22 @@ public class MemoService
 		}
 	}
 	
+	//Initialise database
+	public MemoService() throws UnknownHostException
+	{
+		//Create mongo client
+		MongoClient mongoInstance = new MongoClient("localhost", 27017);
+		
+		//Access/create database
+		db = mongoInstance.getDB("Memos");
+	}
+	
 	@POST
 	@Path("/addMemo")
 	public Response addMemo(@QueryParam("user") String user, @QueryParam("value") String value, @QueryParam("guid") String guid)
 	{ // Adds the memo to the user's database collection
 		if (!(value.trim().equals("")))
 		{
-			//one in 3 chance of failure
-			Random randomizer = new Random();
-			if (randomizer.nextInt(3) == -1)
-			{
-				return Response.status(500).build();
-			}		
-			else{
 			//get the user's collection from the database
 			DBCollection userMemos = db.getCollection(user);
 			
@@ -72,12 +75,13 @@ public class MemoService
 			newMemo.put("TimeMS", new Date().getTime());
 			newMemo.put("Value", value);
 			newMemo.put("Guid", guid);		
+			newMemo.put("Checked", false);	//default value
 			
 			//insert the new memo into the user's collection
 			userMemos.insert(newMemo);
 			
 			//return the ok response and the id of the object
-			return Response.status(200).build();}
+			return Response.status(200).build();
 		}
 		else
 		{
@@ -127,14 +131,32 @@ public class MemoService
 			return Response.status(404).build();
 		}
 	}
-		
-	//Initialise database
-	public MemoService() throws UnknownHostException
+	
+	@POST
+	@Path("/setChecked")
+	public Response setPrority(@QueryParam("user") String user, @QueryParam("memoID") String memoID, @QueryParam("checked") String checked)
 	{
-		//Create mongo client
-		MongoClient mongoInstance = new MongoClient("localhost", 27017);
-		
-		//Access/create database
-		db = mongoInstance.getDB("Memos");
+		delay();
+		try
+		{
+			//get the user's collection from the database
+			DBCollection userMemos = db.getCollection(user);
+			 
+			//find memo
+			DBObject toReprioritise = new BasicDBObject();
+			toReprioritise.put("Guid", memoID);		
+			DBObject memo = userMemos.findOne(toReprioritise);
+			
+			//update the memo with the new priority
+			memo.put("Checked", checked);
+			userMemos.findAndModify(toReprioritise, memo);
+			
+			//return ok
+			return Response.status(200).entity(checked).build();
+		}
+		catch(java.lang.IllegalArgumentException e)
+		{ //memo to change priority of not found
+			return Response.status(404).build();
+		}	
 	}
 }

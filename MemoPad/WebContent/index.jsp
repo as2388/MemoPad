@@ -9,6 +9,7 @@
 			font-size: 15px;
 			padding: 8px;
 			/*display: block;*/
+			padding-right: 50px;
 			word-wrap:break-word;
 		}
 		.divUIMemo
@@ -16,16 +17,23 @@
 			
 			padding-top: 8px;
 			padding-bottom: 8px;
-			
+			margin: 0px;
 		}
 		.divUIDeleteMemo
 		{
+			opacity:0;
+			
 			/*position:fixed;*/
-			right:15px;
+		
+			padding-left:15px;
+			padding-right:15px;
+			
+			margin: -8px;
+			margin-right:0px;
+				
 			font-family: Arial;
 			color: white;
-			padding: 8px;
-			margin: -8px;
+			float: right;
 			
 			background-color: coral;
 		}
@@ -35,21 +43,23 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> <!-- jquery -->
 	<script>
 		var username = "";	//stores the name of the current user
-		var users = [];		//list of users on the 
-		var colors = ['lightgreen', 'pink', 'lightsalmon', 'yellow','lightcoral'];
+		var users = [];		//list of users whose stats are to be viewed
+		var colors = ['lightgreen', 'pink', 'lightsalmon', 'yellow','lightcoral']; //used to assign a color to addititonal users
 		function User(name,color)
-		{
+		{ //maintain basic user details
 			this.name=name;
 			this.color=color;
 		}
 	
 		var localIDPointer;
-		function UIMemo(id, value, time, owner)
+		function UIMemo(id, value, time, owner, checked)
 		{
 			this.id=id;
 			this.value=value;
 			this.time=time;
 			this.owner=owner;
+	 		this.checked=checked;
+	 		console.log("init with " + checked);
 			this.deleted=false;
 		}
 		UIMemo.prototype.generateHTML = function()
@@ -60,39 +70,109 @@
 			}
 			else
 			{
-				return "<div onclick='memoClicked(this.id)' id='" + this.id + "' class='divUIMemo' style='background-color:" + users[this.owner].color +"'> <label class='pUIMemo'>" + this.value + "</label> <!--<label class='divUIDeleteMemo'>X</label>-->  </div><p/>";
+				/*var output = "<div style='";
+				if (this.checked)
+				{
+					output += "opacity:0.5; ";
+				}
+				output += "background-color:" + users[this.owner].color +"' onclick='memoClicked(this.id)' id='" + this.id + "' onmousedown='memoMouseDown(this.id)' id='" + this.id + "' onmouseup='memoMouseUp(this.id)' id='" + this.id + "' class='divUIMemo'> <table><tr> <label class='pUIMemo' id=p'" + this.id + "'>" + this.value + "</label></tr><tr> <label id='delete" + this.id + "' class='divUIDeleteMemo'>X</label> </tr> </table>  <!--<label class='divUIDeleteMemo'>X</label>-->  </div><p/>";
+				return output;*/
+				return "<div onclick='memoClicked(this.id)' id='" + this.id + "'onmousedown='memoMouseDown(this.id)' onmouseup='memoMouseUp(this.id)' class='divUIMemo' style='background-color:" + users[this.owner].color +"'> <label class='pUIMemo'>" + this.value + "</label> <!--<label class='divUIDeleteMemo'>X</label>-->  </div><p/>";
 			}
 		};
+		UIMemo.prototype.showMemoChecked = function()
+		{ 
+			console.log("prototype checked" + this.checked);
+			if (this.checked == "true")
+			{
+				console.log("set true");
+				$("#" + this.id).css("opacity","0.5");
+			}
+			else
+			{
+				console.log("set false");
+				$("#" + this.id).css("opacity","1");
+			}
+			console.log($("#" + this.id).css("opacity"));
+		};
+		UIMemo.prototype.changeChecked = function(checked)
+		{ //update memo checked status and animate transition to the new status
+			//update status
+			this.checked=Boolean(checked);
+			console.log("this.checked was changed to " + checked);
+		
+			//animate transititon
+			if (checked)
+			{ //fade out
+				console.log("fade out");
+				$("#" + this.id).fadeTo("fast" , 0.5, function() {});
+			}
+			else
+			{ //not checked, so fade in
+				console.log('fade in');
+				$("#" + this.id).fadeTo("fast" , 0.9, function() {});
+			}
+		};		
+		var UIMemos = [];	//stores an array of UIMemo objects as defined above
+		
 		function generateguid() 
 		{
 		    function _p8(s) {
-		        var p = (Math.random().toString(16)+"000000000").substr(2,8);
+		        var p = (Math.random().toString(16) + "000000000").substr(2,8);
 		        return s ? "-" + p.substr(0,4) + "-" + p.substr(4,4) : p ;
 		    }
 		    return _p8() + _p8(true) + _p8(true) + _p8();
 		}
-		
-		var UIMemos = [];
 	
 		function memoClicked(id)
-		{ //TODO: change the behaviour to show options. But for now, deletes the memo item
-			deleteMemo(id, null);
+		{ //Invert the checked status of the object			
+			//find the UIMemo object associated with the id
+			var thisUIMemo=new UIMemo(null,null,null,null,null);
+			for (var i=0; i<UIMemos.length; i++)
+			{
+				if (UIMemos[i].id==id)
+				{
+					thisUIMemo = UIMemos[i];
+				}
+			}
+			
+			//Invert checked status
+			//console.log("reqest will be " + !thisUIMemo.checked);
+			if (thisUIMemo.checked=="false")
+			{
+				changeChecked(id, thisUIMemo.owner, true);
+			}
+			else
+			{
+				changeChecked(id, thisUIMemo.owner, !thisUIMemo.checked);
+			}
+			
+		}
+		
+		var deleteTimerFun;
+		function memoMouseDown(id)
+		{
+			deleteTimerFun = setTimeout(function(){deleteMemo(id);},500);		
+		}
+		function memoMouseUp(id)
+		{
+			clearTimeout(deleteTimerFun);		
 		}
 		
 		var opCount=0;		
 		function addMemo()
-		{
+		{ //create a memo locally and try to add to server
 			if (!($('#txtInput').val() == "New Memo..." || $('#txtInput').val().trim() == ""))
 			{
 				//create locally
 				var guid=generateguid();
 				if (UIMemos.length == 0)
 				{
-					UIMemos[0]=new UIMemo(guid,$('#txtInput').val(), new Date().getTime(), 0);
+					UIMemos[0]=new UIMemo(guid,$('#txtInput').val(), new Date().getTime(), 0, false);
 				}
 				else
 				{
-					UIMemos[UIMemos.length]=new UIMemo(guid,$('#txtInput').val(), UIMemos[UIMemos.length-1].time + 1, 0);
+					UIMemos[UIMemos.length]=new UIMemo(guid,$('#txtInput').val(), UIMemos[UIMemos.length-1].time + 1, 0, false);
 				}
 				
 				//add to screen with fade in animation
@@ -110,10 +190,9 @@
 				$("#txtInput").val("");
 				$("#txtInput").focus();
 			}
-		}
-		
+		}		
 		function addToServer(value, guid)
-		{
+		{ //try to add a memo to the server
 			playSyncAnim();
 			
 			var xhr = new XMLHttpRequest();
@@ -137,7 +216,7 @@
 		function deleteMemo(id)
 		{ //delete the memo of specified id
 			//find the associated UIMemo object
-			var thisUIMemo=new UIMemo(null,null,null,null);
+			var thisUIMemo=new UIMemo(null,null,null,null, null);
 			for (var i=0; i<UIMemos.length; i++)
 			{
 				if (UIMemos[i].id==id)
@@ -154,16 +233,16 @@
 				playSyncAnim();
 				
 				thisUIMemo.deleted = true;
-				displayMemos();
+				animateDeleteMemo(thisUIMemo.id);
+				//displayMemos();
 					
 				//try to delete from server
 				tryDelete(thisUIMemo.id);
 				opCount++;				
 			}
 		}
-		
 		function tryDelete(guid)
-		{
+		{ //try to delete the memo on the server
 			var xhr = new XMLHttpRequest();
 			xhr.open("POST", "http://localhost:8080/MemoPad/memo/deleteMemo?user=" + username + "&memoID=" + guid, true);
 			
@@ -183,13 +262,59 @@
 			xhr.send();
 		}
 		
+		function changeChecked(id, user, checked)
+		{
+			console.log("request will be " + checked);
+			
+			//find the associated UIMemo object
+			var thisUIMemo=new UIMemo(null,null,null,null, null);
+			for (var i=0; i<UIMemos.length; i++)
+			{
+				if (UIMemos[i].id==id)
+				{
+					thisUIMemo = UIMemos[i];
+				}
+			}
+			
+			//update its checked status locally
+			thisUIMemo.changeChecked(checked);
+			
+			//syrchronise the checked change with the server
+			opCount++;
+			playSyncAnim();
+			tryChangeChecked(id, user, checked);
+			
+		}
+		function tryChangeChecked(id, user, checked)
+		{ //try to update the memo's new checked status with the server
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", "http://localhost:8080/MemoPad/memo/setChecked?user=" + users[user].name + "&memoID=" + id + "&checked=" + checked, true);
+			
+			xhr.addEventListener('load', function()
+					{
+						console.log("request was " + xhr.response);
+						//setInterval(getMemos(), 500);
+						if (xhr.status == 200)
+						{ //status change was ok, report no longer synchronising the change
+							opCount--;
+							tryStopSyncAnim();
+						}
+						else
+						{ //something went wrong so try again
+							setTimeout(function(){tryChangeChecked(id, user, checked);},100);
+						}
+					}, false);
+			
+			xhr.send();
+		}
+		
 		var syncStage=0;
 		var syncAnim;
 		var synching=false;
 		function syncAnimate()
-		{
+		{ //advance the "synching" indicator animation
 			syncStage++;
-			switch(syncStage)
+			switch(syncStage) 
 			{
 				case 1:
 					$('#synclabel').text('.');
@@ -211,7 +336,7 @@
 			}
 		}
 		window.onbeforeunload = function(e)
-		{ //if synchronisation is incomplete ask the user if they really want to cllose the page
+		{ //if synchronisation is incomplete ask the user if they really want to close/reload/navigate from the page
 			if (synching)
 			{
 				return 'Not all changes have been synchronised with the server. If you continue, some changes will be lost';
@@ -248,7 +373,7 @@
 		}		
 		function getMemos()
 		{ //gets the user's memos from the servlet and displays the values on screen
-			
+			//console.log("get request");
 			//UIMemos=[];
 			//get memos for each user
 			newUIMemos = [];
@@ -287,7 +412,8 @@
 							//create the UIMemo objects from the parsed JSON
 							for (var i = 0; i < parsedresponse.length; i++)
 							{
-								newUIMemos[newUIMemos.length] = new UIMemo(parsedresponse[i].Guid, parsedresponse[i].Value, parsedresponse[i].TimeMS, k);
+								newUIMemos[newUIMemos.length] = new UIMemo(parsedresponse[i].Guid, parsedresponse[i].Value, parsedresponse[i].TimeMS, k, parsedresponse[i].Checked);
+								console.log("response was " + parsedresponse[i].Checked);
 							}
 							
 							//if the asnycCetCount is zero, then update the display
@@ -304,6 +430,8 @@
 																
 								displayMemos();
 								
+								
+								
 								//animate in new memos
 								for (var i=0; i<UIMemos.length; i++)
 								{
@@ -318,9 +446,38 @@
 									if (!found)
 									{
 										$("#" + UIMemos[i].id).css("opacity","0");
-										$("#" + UIMemos[i].id).fadeTo(400 , 1, function() {});
+										if (UIMemos[i].checked == "true")
+										{
+											console.log("get fade out");
+											$("#" + UIMemos[i].id).fadeTo(400 , 0.5, function() {});
+										}
+										else
+										{
+											console.log("get fade in");
+											$("#" + UIMemos[i].id).fadeTo(400 , 1, function() {});
+										}
 									}
 								}
+								
+								//animate out deleted memos
+								for (var i=0; i<oldUIMemos.length; i++)
+								{
+									var found=false;
+									for (var j=0; j<UIMemos.length; j++)
+									{
+										if (oldUIMemos[i].id == UIMemos[j].id)
+										{
+											found=true;
+										}
+									}
+									if (!found)
+									{
+										//animateDeleteMemo(oldUIMemos[i].id);
+										
+									}
+								}
+								
+								//console.log("UIMemos status is " + UIMemos[0].checked);
 								
 								getSynching = false;
 								tryStopSyncAnim();
@@ -339,6 +496,20 @@
 			}
 		}
 		
+		function animateDeleteMemo(id)
+		{
+			//$("#" + UIMemos[i].id).fadeTo(400 , 0, function() {});
+			
+			$("#" + id).animate({
+				opacity: 0,
+				height: '0px',
+				margin: '-8px',
+				padding: '0px'
+			}, 400);
+			
+			setTimeout(displayMemos, 400);
+		}
+		
 		function displayMemos()
 		{
 			//get each UIMemo to generate its HTML, and put this on the page
@@ -346,6 +517,8 @@
 			for (var i = 0; i < UIMemos.length; i++)
 			{
 				$("#memoDiv").append(UIMemos[i].generateHTML());
+				console.log("HTML Render");
+				UIMemos[i].showMemoChecked();
 			}	
 		}
 		
@@ -468,7 +641,7 @@
 				}
 			}
 			signIn();
-			getMemos();
+			//getMemos();
 			
 			$( "#users" ).fadeTo("fast" , 0, function() {});	
 			$( "#cmdEditUsers" ).fadeTo("fast" , 1, function() {});
@@ -483,7 +656,7 @@
 		<button onclick="signIn()">Go</button>
 	</div>
 	
-	<div id="main" style="display: none; opacity:0;">
+	<span id="main" style="display: none; opacity:0;">
 		<div id="titlebar" style="padding-top:10px; padding-left:5px; padding-bottom:10px; font-size:1.5em; opacity:0.9; position:fixed; top:0; left:0; width:100%; background-color:white;">
 			<label  id='title' style="margin-before:0.83em; margin-after:0.83em; font-weight:normal; margin-start:0; margin-end:0; font-family:Arial; padding-left:5px;"></label> 
 			<button id="cmdEditUsers" onclick="editUsers()" style="margin-right:10px; float:right;">Edit</button>
@@ -501,7 +674,7 @@
 		</div>
 	
 		<div style="height:30px"></div> <!-- create space above New Memo Bar -->
-	</div>
+	</span>
 	
 </body>
 </html> 
