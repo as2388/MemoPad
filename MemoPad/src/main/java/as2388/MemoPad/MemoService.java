@@ -34,7 +34,7 @@ import com.mongodb.MongoClient;
 public class MemoService 
 {
 	DB db; //database containing the memos
-	int latencyMS = 0;
+	int latencyMS = 2000;
 	private void delay()
 	{
 		if (latencyMS!=0)
@@ -78,7 +78,7 @@ public class MemoService
 			newMemo.put("Checked", false);	//default value
 			
 			//insert the new memo into the user's collection
-			userMemos.insert(newMemo);
+			userMemos.insert(newMemo);		
 			
 			//return the ok response and the id of the object
 			return Response.status(200).build();

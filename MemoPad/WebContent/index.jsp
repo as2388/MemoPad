@@ -651,8 +651,10 @@
 </head>
 
 <body onload="pageLoad()">
-	<div id="user">	
-		<input id="username" value="Alexander"></input>
+	<div id="user" style="margin:auto; width:300px; margin-top:120px;">	 
+		<div style="font-weight:normal; font-family:Arial; font-size:1.8em; padding:5px; margin-left:75px;"><b>Memo</b>Pad</div>
+		<label  style="font-family:Arial; margin-left:30px;">Username:</label>
+		<input id="username" value=""></input>
 		<button onclick="signIn()">Go</button>
 	</div>
 	
